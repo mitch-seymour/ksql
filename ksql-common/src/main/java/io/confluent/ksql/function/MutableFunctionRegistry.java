@@ -44,6 +44,17 @@ public interface MutableFunctionRegistry extends FunctionRegistry {
   void addFunction(KsqlFunction ksqlFunction);
 
   /**
+   * Register or replace the supplied {@code ksqlFunction}.
+   *
+   * <p>Note: a suitable function factory must already have been register via
+   * {@link #ensureFunctionFactory(UdfFactory)}.
+   *
+   * @param ksqlFunction the function to register.
+   * @throws KsqlException if a function, (of any type), with the same name exists.
+   */
+  void addOrReplaceFunction(KsqlFunction ksqlFunction);
+
+  /**
    * Register an aggregate function factory.
    *
    * @param aggregateFunctionFactory the factory to register.

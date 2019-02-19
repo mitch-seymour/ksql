@@ -14,6 +14,7 @@
 
 package io.confluent.ksql;
 
+import io.confluent.ksql.function.FunctionRegistry;
 import io.confluent.ksql.metastore.MetaStore;
 import io.confluent.ksql.parser.KsqlParser.ParsedStatement;
 import io.confluent.ksql.parser.KsqlParser.PreparedStatement;
@@ -43,6 +44,11 @@ public interface KsqlExecutionContext {
    * @return read-only access to the context's {@link MetaStore}.
    */
   MetaStore getMetaStore();
+
+  /**
+   * @return read-only access to the context's {@link MetaStore}.
+   */
+  FunctionRegistry getFunctionRegistry();
 
   /**
    * Get the number of persistent queries.

@@ -48,9 +48,9 @@ public class QueryAnalyzer {
   public AggregateAnalysis analyzeAggregate(final Query query, final Analysis analysis) {
     final AggregateAnalysis aggregateAnalysis = new AggregateAnalysis();
     final AggregateAnalyzer aggregateAnalyzer = new
-        AggregateAnalyzer(aggregateAnalysis, analysis, metaStore);
+        AggregateAnalyzer(aggregateAnalysis, analysis, metaStore.getFunctionRegistry());
     final AggregateExpressionRewriter aggregateExpressionRewriter =
-        new AggregateExpressionRewriter(metaStore);
+        new AggregateExpressionRewriter(metaStore.getFunctionRegistry());
 
     processSelectExpressions(
         analysis,

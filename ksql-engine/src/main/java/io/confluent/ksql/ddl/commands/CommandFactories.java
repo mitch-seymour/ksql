@@ -14,6 +14,7 @@
 
 package io.confluent.ksql.ddl.commands;
 
+import io.confluent.ksql.parser.tree.CreateFunction;
 import io.confluent.ksql.parser.tree.CreateStream;
 import io.confluent.ksql.parser.tree.CreateTable;
 import io.confluent.ksql.parser.tree.DdlStatement;
@@ -41,6 +42,7 @@ public class CommandFactories implements DdlCommandFactory {
       .withArgTypes(CommandFactories.class, CallInfo.class)
       .withReturnType(DdlCommand.class)
       .put(RegisterTopic.class, CommandFactories::handleRegisterTopic)
+      .put(CreateFunction.class, CommandFactories::handleCreateFunction)
       .put(CreateStream.class, CommandFactories::handleCreateStream)
       .put(CreateTable.class, CommandFactories::handleCreateTable)
       .put(DropStream.class, CommandFactories::handleDropStream)
@@ -79,6 +81,13 @@ public class CommandFactories implements DdlCommandFactory {
 
   private static RegisterTopicCommand handleRegisterTopic(final RegisterTopic statement) {
     return new RegisterTopicCommand(statement);
+  }
+
+  private CreateFunctionCommand handleCreateFunction(
+      final CreateFunction statement
+  ) {
+    return new CreateFunctionCommand(
+        statement);
   }
 
   private CreateStreamCommand handleCreateStream(

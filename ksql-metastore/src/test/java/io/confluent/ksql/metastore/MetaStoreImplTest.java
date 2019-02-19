@@ -24,7 +24,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import io.confluent.ksql.function.FunctionRegistry;
+import io.confluent.ksql.function.MutableFunctionRegistry;
 import io.confluent.ksql.util.KsqlException;
 import io.confluent.ksql.util.KsqlReferentialIntegrityException;
 import java.util.Map;
@@ -52,7 +52,7 @@ public class MetaStoreImplTest {
   public final ExpectedException expectedException = ExpectedException.none();
 
   @Mock
-  private FunctionRegistry functionRegistry;
+  private MutableFunctionRegistry functionRegistry;
   @Mock
   private KsqlTopic topic;
   @Mock

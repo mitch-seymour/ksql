@@ -48,6 +48,14 @@ statement
     | LOAD expression                                                       #loadProperties
     | REGISTER TOPIC (IF NOT EXISTS)? qualifiedName
             (WITH tableProperties)?                                         #registerTopic
+
+    | CREATE (OR REPLACE)? FUNCTION qualifiedName
+                ('(' tableElement (',' tableElement)* ')')?
+                RETURNS type
+                LANGUAGE languageName
+                AS
+                udfScript
+                (WITH functionProperties)?                                  #createFunction
     | CREATE STREAM (IF NOT EXISTS)? qualifiedName
                 ('(' tableElement (',' tableElement)* ')')?
                 (WITH tableProperties)?                                     #createStream
@@ -82,6 +90,14 @@ tableProperties
     ;
 
 tableProperty
+    : identifier EQ expression
+    ;
+
+functionProperties
+    : '(' functionProperty (',' functionProperty)* ')'
+    ;
+
+functionProperty
     : identifier EQ expression
     ;
 
@@ -316,6 +332,14 @@ qualifiedName
     : identifier ('.' identifier)*
     ;
 
+languageName
+    : identifier
+    ;
+
+udfScript
+    : UDF_SCRIPT
+    ;
+
 identifier
     : IDENTIFIER             #unquotedIdentifier
     | QUOTED_IDENTIFIER      #quotedIdentifierAlternative
@@ -330,7 +354,7 @@ number
     ;
 
 nonReserved
-    : SHOW | TABLES | COLUMNS | COLUMN | PARTITIONS | FUNCTIONS | FUNCTION | SESSION
+    : SHOW | TABLES | COLUMNS | COLUMN | PARTITIONS | FUNCTIONS | FUNCTION | SESSION | LANGUAGE | RETURNS
     | STRUCT | MAP | ARRAY | PARTITION
     | INTEGER | DATE | TIME | TIMESTAMP | INTERVAL | ZONE
     | YEAR | MONTH | DAY | HOUR | MINUTE | SECOND
@@ -448,6 +472,10 @@ BEGINNING: 'BEGINNING';
 UNSET: 'UNSET';
 RUN: 'RUN';
 SCRIPT: 'SCRIPT';
+RETURNS: 'RETURNS';
+LANGUAGE: 'LANGUAGE';
+HEREDOC: '$$';
+REPLACE: 'REPLACE';
 
 IF: 'IF';
 
@@ -499,6 +527,10 @@ DIGIT_IDENTIFIER
 
 QUOTED_IDENTIFIER
     : '"' ( ~'"' | '""' )* '"'
+    ;
+
+UDF_SCRIPT
+    : HEREDOC ~'$'~'$'* HEREDOC
     ;
 
 BACKQUOTED_IDENTIFIER

@@ -78,6 +78,16 @@ public class InternalFunctionRegistry implements MutableFunctionRegistry {
     udfFactory.addFunction(ksqlFunction);
   }
 
+  @SuppressWarnings("unchecked")
+  @Override
+  public void addOrReplaceFunction(final KsqlFunction ksqlFunction) {
+    final UdfFactory udfFactory = udfs.get(ksqlFunction.getFunctionName().toUpperCase());
+    if (udfFactory == null) {
+      throw new KsqlException("Unknown function factory: " + ksqlFunction.getFunctionName());
+    }
+    udfFactory.addOrReplaceFunction(ksqlFunction);
+  }
+
   @Override
   public UdfFactory ensureFunctionFactory(final UdfFactory factory) {
     validateFunctionName(factory.getName());

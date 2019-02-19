@@ -33,7 +33,7 @@ public class UdfFactory {
   private final Map<List<FunctionParameter>, KsqlFunction> functions = new LinkedHashMap<>();
 
 
-  UdfFactory(final Class<? extends Kudf> udfClass,
+  public UdfFactory(final Class<? extends Kudf> udfClass,
              final UdfMetadata metadata) {
     this.udfClass = Objects.requireNonNull(udfClass, "udfClass can't be null");
     this.metadata = Objects.requireNonNull(metadata, "metadata can't be null");
@@ -48,8 +48,13 @@ public class UdfFactory {
   void addFunction(final KsqlFunction ksqlFunction) {
     final List<FunctionParameter> paramTypes
         = mapToFunctionParameter(ksqlFunction.getArguments());
-
     checkCompatible(ksqlFunction, paramTypes);
+    functions.put(paramTypes, ksqlFunction);
+  }
+
+  void addOrReplaceFunction(final KsqlFunction ksqlFunction) {
+    final List<FunctionParameter> paramTypes
+        = mapToFunctionParameter(ksqlFunction.getArguments());
     functions.put(paramTypes, ksqlFunction);
   }
 
@@ -193,6 +198,14 @@ public class UdfFactory {
       // primitive types will match their boxed counterparts. i.e,
       // primitive types are not optional, i.e., they don't accept null.
       return Objects.hash(type);
+    }
+  
+    @Override
+    public String toString() {
+      return "FunctionParameter{"
+          + "type=" + type
+          + ", isOptional=" + isOptional
+          + '}';
     }
 
     boolean isOptional() {
