@@ -36,6 +36,7 @@ import io.confluent.ksql.parser.tree.BinaryLiteral;
 import io.confluent.ksql.parser.tree.BooleanLiteral;
 import io.confluent.ksql.parser.tree.Cast;
 import io.confluent.ksql.parser.tree.ComparisonExpression;
+import io.confluent.ksql.parser.tree.CreateFunction;
 import io.confluent.ksql.parser.tree.CreateStream;
 import io.confluent.ksql.parser.tree.CreateStreamAsSelect;
 import io.confluent.ksql.parser.tree.CreateTable;
@@ -253,6 +254,14 @@ public class AstBuilder extends SqlBaseBaseVisitor<Node> {
         context.EXISTS() != null,
         processTableProperties(context.tableProperties())
     );
+  }
+
+  @Override
+  public Node visitCreateFunction(final SqlBaseParser.CreateFunctionContext context) {
+    return new CreateFunction(
+        Optional.of(getLocation(context)),
+        getQualifiedName(context.qualifiedName()),
+        visit(context.tableElement(), TableElement.class));
   }
 
   @Override
