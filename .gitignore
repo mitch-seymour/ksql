@@ -1,3 +1,9 @@
+# Antlr
+ksql-parser/src/main/antlr4/io/confluent/ksql/parser/*.class
+ksql-parser/src/main/antlr4/io/confluent/ksql/parser/*.java
+ksql-parser/src/main/antlr4/io/confluent/ksql/parser/*.tokens
+ksql-parser/src/main/antlr4/io/confluent/ksql/parser/*.interp
+
 # Build products
 target/
 docs/_build/
@@ -22,3 +28,4 @@ dist/
 .settings
 .tern-port
 ui/
+
