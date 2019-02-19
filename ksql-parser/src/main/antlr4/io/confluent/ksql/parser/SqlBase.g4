@@ -48,6 +48,11 @@ statement
     | LOAD expression                                                       #loadProperties
     | REGISTER TOPIC (IF NOT EXISTS)? qualifiedName
             (WITH tableProperties)?                                         #registerTopic
+
+    | CREATE FUNCTION qualifiedName
+                ('(' tableElement (',' tableElement)* ')')?
+                RETURNS type
+                LANGUAGE identifier                                         #createFunction
     | CREATE STREAM (IF NOT EXISTS)? qualifiedName
                 ('(' tableElement (',' tableElement)* ')')?
                 (WITH tableProperties)?                                     #createStream
@@ -330,7 +335,7 @@ number
     ;
 
 nonReserved
-    : SHOW | TABLES | COLUMNS | COLUMN | PARTITIONS | FUNCTIONS | FUNCTION | SESSION
+    : SHOW | TABLES | COLUMNS | COLUMN | PARTITIONS | FUNCTIONS | FUNCTION | SESSION | LANGUAGE | RETURNS
     | STRUCT | MAP | ARRAY | PARTITION
     | INTEGER | DATE | TIME | TIMESTAMP | INTERVAL | ZONE
     | YEAR | MONTH | DAY | HOUR | MINUTE | SECOND
@@ -448,6 +453,9 @@ BEGINNING: 'BEGINNING';
 UNSET: 'UNSET';
 RUN: 'RUN';
 SCRIPT: 'SCRIPT';
+RETURNS: 'RETURNS';
+LANGUAGE: 'LANGUAGE';
+HEREDOC: '$$';
 
 IF: 'IF';
 
