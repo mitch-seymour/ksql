@@ -22,9 +22,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-public class CreateFunction
-    extends Statement implements ExecutableDdlStatement {
-
+public class CreateFunction extends Statement {
   private final QualifiedName name;
   private final List<TableElement> elements;
 

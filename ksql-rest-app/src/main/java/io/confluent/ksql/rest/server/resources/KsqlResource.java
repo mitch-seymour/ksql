@@ -33,6 +33,7 @@ import io.confluent.ksql.metastore.StructuredDataSource;
 import io.confluent.ksql.parser.KsqlParser.ParsedStatement;
 import io.confluent.ksql.parser.KsqlParser.PreparedStatement;
 import io.confluent.ksql.parser.tree.CreateAsSelect;
+import io.confluent.ksql.parser.tree.CreateFunction;
 import io.confluent.ksql.parser.tree.DescribeFunction;
 import io.confluent.ksql.parser.tree.ExecutableDdlStatement;
 import io.confluent.ksql.parser.tree.Explain;
@@ -132,6 +133,8 @@ public class KsqlResource {
 
   private static final Map<Class<? extends Statement>, Handler<Statement>> CUSTOM_EXECUTORS =
       ImmutableMap.<Class<? extends Statement>, Handler<Statement>>builder()
+          .put(CreateFunction.class,
+              castExecutor(KsqlResource::createFunction, CreateFunction.class))
           .put(ListTopics.class,
               castExecutor(KsqlResource::listTopics, ListTopics.class))
           .put(ListRegisteredTopics.class,
@@ -166,6 +169,7 @@ public class KsqlResource {
       ImmutableSet.<Class<? extends Statement>>builder()
           .add(ListTopics.class)
           .add(ListFunctions.class)
+          .add(CreateFunction.class)
           .add(DescribeFunction.class)
           .add(ListProperties.class)
           .add(SetProperty.class)
@@ -406,6 +410,27 @@ public class KsqlResource {
         ksqlTables.stream()
             .map(SourceInfo.Table::new)
             .collect(Collectors.toList()));
+  }
+
+  private KsqlEntity createFunction(final PreparedStatement<CreateFunction> statement) {
+    System.out.println("KsqlResource::createFunction");
+    final FunctionRegistry functionRegistry = ksqlEngine.getMetaStore();
+
+    final List<SimpleFunctionInfo> all = functionRegistry.listFunctions().stream()
+        .filter(factory -> !factory.isInternal())
+        .map(factory -> new SimpleFunctionInfo(
+            factory.getName().toUpperCase(),
+            FunctionType.scalar))
+        .collect(Collectors.toList());
+
+    all.addAll(functionRegistry.listAggregateFunctions().stream()
+        .filter(factory -> !factory.isInternal())
+        .map(factory -> new SimpleFunctionInfo(
+            factory.getName().toUpperCase(),
+            FunctionType.aggregate))
+        .collect(Collectors.toList()));
+
+    return new FunctionNameList(statement.getStatementText(), all);
   }
 
   private KsqlEntity listFunctions(final PreparedStatement<ListFunctions> statement) {
