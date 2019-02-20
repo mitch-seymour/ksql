@@ -1,0 +1,84 @@
+[2019-02-19T15:39:57.750+0500][gc] Using Concurrent Mark Sweep
+[2019-02-19T15:39:57.750+0500][gc,heap,coops] Heap address: 0x0000000740000000, size: 3072 MB, Compressed Oops mode: Zero based, Oop shift amount: 3
+[2019-02-19T15:39:59.779+0500][gc,start     ] GC(0) Pause Initial Mark
+[2019-02-19T15:39:59.797+0500][gc           ] GC(0) Pause Initial Mark 86M->86M(243M) 18.416ms
+[2019-02-19T15:39:59.797+0500][gc,cpu       ] GC(0) User=0.02s Sys=0.00s Real=0.02s
+[2019-02-19T15:39:59.797+0500][gc           ] GC(0) Concurrent Mark
+[2019-02-19T15:39:59.797+0500][gc,task      ] GC(0) Using 2 workers of 2 for marking
+[2019-02-19T15:39:59.798+0500][gc           ] GC(0) Concurrent Mark 0.224ms
+[2019-02-19T15:39:59.798+0500][gc,cpu       ] GC(0) User=0.00s Sys=0.00s Real=0.00s
+[2019-02-19T15:39:59.798+0500][gc           ] GC(0) Concurrent Preclean
+[2019-02-19T15:39:59.798+0500][gc           ] GC(0) Concurrent Preclean 0.433ms
+[2019-02-19T15:39:59.798+0500][gc,cpu       ] GC(0) User=0.00s Sys=0.00s Real=0.00s
+[2019-02-19T15:39:59.798+0500][gc           ] GC(0) Concurrent Abortable Preclean
+[2019-02-19T15:40:00.051+0500][gc,start     ] GC(1) Pause Young (GCLocker Initiated GC)
+[2019-02-19T15:40:00.051+0500][gc,task      ] GC(1) Using 5 workers of 8 for evacuation
+[2019-02-19T15:40:00.073+0500][gc,heap      ] GC(1) ParNew: 104960K->13055K(118016K)
+[2019-02-19T15:40:00.073+0500][gc,heap      ] GC(1) CMS: 0K->2617K(131072K)
+[2019-02-19T15:40:00.073+0500][gc,metaspace ] GC(1) Metaspace: 26576K->26576K(1073152K)
+[2019-02-19T15:40:00.073+0500][gc           ] GC(1) Pause Young (GCLocker Initiated GC) 102M->15M(243M) 22.614ms
+[2019-02-19T15:40:00.073+0500][gc,cpu       ] GC(1) User=0.06s Sys=0.02s Real=0.02s
+[2019-02-19T15:40:00.758+0500][gc           ] GC(0) Concurrent Abortable Preclean 960.158ms
+[2019-02-19T15:40:00.758+0500][gc,cpu       ] GC(0) User=2.79s Sys=0.13s Real=0.96s
+[2019-02-19T15:40:00.758+0500][gc,start     ] GC(0) Pause Remark
+[2019-02-19T15:40:00.758+0500][gc,start     ] GC(2) Pause Young (CMS Final Remark)
+[2019-02-19T15:40:00.759+0500][gc,task      ] GC(2) Using 5 workers of 8 for evacuation
+[2019-02-19T15:40:00.779+0500][gc,heap      ] GC(2) ParNew: 68898K->4566K(118016K)
+[2019-02-19T15:40:00.779+0500][gc,heap      ] GC(2) CMS: 2617K->15881K(131072K)
+[2019-02-19T15:40:00.779+0500][gc,metaspace ] GC(2) Metaspace: 30642K->30642K(1077248K)
+[2019-02-19T15:40:00.779+0500][gc           ] GC(2) Pause Young (CMS Final Remark) 69M->19M(243M) 20.459ms
+[2019-02-19T15:40:00.779+0500][gc,cpu       ] GC(2) User=0.09s Sys=0.01s Real=0.02s
+[2019-02-19T15:40:00.786+0500][gc           ] GC(0) Pause Remark 69M->19M(243M) 27.304ms
+[2019-02-19T15:40:00.786+0500][gc,cpu       ] GC(0) User=0.12s Sys=0.01s Real=0.03s
+[2019-02-19T15:40:00.786+0500][gc           ] GC(0) Concurrent Sweep
+[2019-02-19T15:40:00.790+0500][gc           ] GC(0) Concurrent Sweep 3.748ms
+[2019-02-19T15:40:00.790+0500][gc,cpu       ] GC(0) User=0.02s Sys=0.00s Real=0.01s
+[2019-02-19T15:40:00.790+0500][gc           ] GC(0) Concurrent Reset
+[2019-02-19T15:40:00.815+0500][gc           ] GC(0) Concurrent Reset 25.567ms
+[2019-02-19T15:40:00.815+0500][gc,cpu       ] GC(0) User=0.12s Sys=0.02s Real=0.02s
+[2019-02-19T15:40:00.815+0500][gc,heap      ] GC(0) Old: 0K->15881K(131072K)
+[2019-02-19T15:40:07.363+0500][gc,start     ] GC(3) Pause Young (Allocation Failure)
+[2019-02-19T15:40:07.364+0500][gc,task      ] GC(3) Using 8 workers of 8 for evacuation
+[2019-02-19T15:40:07.368+0500][gc,heap      ] GC(3) ParNew: 109526K->7174K(118016K)
+[2019-02-19T15:40:07.368+0500][gc,heap      ] GC(3) CMS: 15881K->15881K(131072K)
+[2019-02-19T15:40:07.368+0500][gc,metaspace ] GC(3) Metaspace: 41428K->41428K(1087488K)
+[2019-02-19T15:40:07.368+0500][gc           ] GC(3) Pause Young (Allocation Failure) 122M->22M(243M) 5.181ms
+[2019-02-19T15:40:07.368+0500][gc,cpu       ] GC(3) User=0.03s Sys=0.00s Real=0.00s
+[2019-02-19T15:40:09.371+0500][gc,start     ] GC(4) Pause Initial Mark
+[2019-02-19T15:40:09.376+0500][gc           ] GC(4) Pause Initial Mark 97M->97M(243M) 5.524ms
+[2019-02-19T15:40:09.376+0500][gc,cpu       ] GC(4) User=0.05s Sys=0.00s Real=0.00s
+[2019-02-19T15:40:09.376+0500][gc           ] GC(4) Concurrent Mark
+[2019-02-19T15:40:09.376+0500][gc,task      ] GC(4) Using 2 workers of 2 for marking
+[2019-02-19T15:40:09.383+0500][gc           ] GC(4) Concurrent Mark 7.005ms
+[2019-02-19T15:40:09.383+0500][gc,cpu       ] GC(4) User=0.01s Sys=0.00s Real=0.01s
+[2019-02-19T15:40:09.383+0500][gc           ] GC(4) Concurrent Preclean
+[2019-02-19T15:40:09.385+0500][gc           ] GC(4) Concurrent Preclean 1.337ms
+[2019-02-19T15:40:09.385+0500][gc,cpu       ] GC(4) User=0.00s Sys=0.00s Real=0.00s
+[2019-02-19T15:40:09.385+0500][gc           ] GC(4) Concurrent Abortable Preclean
+[2019-02-19T15:40:14.400+0500][gc           ] GC(4) Concurrent Abortable Preclean 5015.555ms
+[2019-02-19T15:40:14.400+0500][gc,cpu       ] GC(4) User=1.37s Sys=0.02s Real=5.02s
+[2019-02-19T15:40:14.400+0500][gc,start     ] GC(4) Pause Remark
+[2019-02-19T15:40:14.400+0500][gc,start     ] GC(5) Pause Young (CMS Final Remark)
+[2019-02-19T15:40:14.401+0500][gc,task      ] GC(5) Using 8 workers of 8 for evacuation
+[2019-02-19T15:40:14.411+0500][gc,heap      ] GC(5) ParNew: 84568K->11806K(118016K)
+[2019-02-19T15:40:14.411+0500][gc,heap      ] GC(5) CMS: 15881K->15881K(131072K)
+[2019-02-19T15:40:14.411+0500][gc,metaspace ] GC(5) Metaspace: 52492K->52492K(1097728K)
+[2019-02-19T15:40:14.411+0500][gc           ] GC(5) Pause Young (CMS Final Remark) 98M->27M(243M) 10.188ms
+[2019-02-19T15:40:14.411+0500][gc,cpu       ] GC(5) User=0.04s Sys=0.00s Real=0.01s
+[2019-02-19T15:40:14.423+0500][gc           ] GC(4) Pause Remark 98M->27M(243M) 22.868ms
+[2019-02-19T15:40:14.423+0500][gc,cpu       ] GC(4) User=0.07s Sys=0.00s Real=0.02s
+[2019-02-19T15:40:14.423+0500][gc           ] GC(4) Concurrent Sweep
+[2019-02-19T15:40:14.428+0500][gc           ] GC(4) Concurrent Sweep 4.114ms
+[2019-02-19T15:40:14.428+0500][gc,cpu       ] GC(4) User=0.00s Sys=0.01s Real=0.00s
+[2019-02-19T15:40:14.428+0500][gc           ] GC(4) Concurrent Reset
+[2019-02-19T15:40:14.431+0500][gc           ] GC(4) Concurrent Reset 3.091ms
+[2019-02-19T15:40:14.431+0500][gc,cpu       ] GC(4) User=0.01s Sys=0.00s Real=0.01s
+[2019-02-19T15:40:14.431+0500][gc,heap      ] GC(4) Old: 15881K->15781K(131072K)
+[2019-02-19T17:01:17.919+0500][gc,heap,exit ] Heap
+[2019-02-19T17:01:17.919+0500][gc,heap,exit ]  par new generation   total 118016K, used 57046K [0x0000000740000000, 0x0000000748000000, 0x00000007a0000000)
+[2019-02-19T17:01:17.919+0500][gc,heap,exit ]   eden space 104960K,  43% used [0x0000000740000000, 0x0000000742c2e0f0, 0x0000000746680000)
+[2019-02-19T17:01:17.919+0500][gc,heap,exit ]   from space 13056K,  90% used [0x0000000746680000, 0x0000000747207868, 0x0000000747340000)
+[2019-02-19T17:01:17.919+0500][gc,heap,exit ]   to   space 13056K,   0% used [0x0000000747340000, 0x0000000747340000, 0x0000000748000000)
+[2019-02-19T17:01:17.919+0500][gc,heap,exit ]  concurrent mark-sweep generation total 131072K, used 15781K [0x00000007a0000000, 0x00000007a8000000, 0x0000000800000000)
+[2019-02-19T17:01:17.919+0500][gc,heap,exit ]  Metaspace       used 57214K, capacity 58675K, committed 59116K, reserved 1101824K
+[2019-02-19T17:01:17.919+0500][gc,heap,exit ]   class space    used 6878K, capacity 7440K, committed 7468K, reserved 1048576K

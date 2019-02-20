@@ -1,0 +1,10 @@
+[2019-02-19T15:30:12.664+0500][gc] Using Concurrent Mark Sweep
+[2019-02-19T15:30:12.664+0500][gc,heap,coops] Heap address: 0x0000000740000000, size: 3072 MB, Compressed Oops mode: Zero based, Oop shift amount: 3
+[2019-02-19T15:30:13.053+0500][gc,heap,exit ] Heap
+[2019-02-19T15:30:13.053+0500][gc,heap,exit ]  par new generation   total 118016K, used 14694K [0x0000000740000000, 0x0000000748000000, 0x00000007a0000000)
+[2019-02-19T15:30:13.053+0500][gc,heap,exit ]   eden space 104960K,  14% used [0x0000000740000000, 0x0000000740e59b78, 0x0000000746680000)
+[2019-02-19T15:30:13.053+0500][gc,heap,exit ]   from space 13056K,   0% used [0x0000000746680000, 0x0000000746680000, 0x0000000747340000)
+[2019-02-19T15:30:13.053+0500][gc,heap,exit ]   to   space 13056K,   0% used [0x0000000747340000, 0x0000000747340000, 0x0000000748000000)
+[2019-02-19T15:30:13.053+0500][gc,heap,exit ]  concurrent mark-sweep generation total 131072K, used 0K [0x00000007a0000000, 0x00000007a8000000, 0x0000000800000000)
+[2019-02-19T15:30:13.053+0500][gc,heap,exit ]  Metaspace       used 11234K, capacity 11476K, committed 11776K, reserved 1060864K
+[2019-02-19T15:30:13.053+0500][gc,heap,exit ]   class space    used 1138K, capacity 1229K, committed 1280K, reserved 1048576K

@@ -15,6 +15,7 @@
 package io.confluent.ksql.rest.server.computation;
 
 import io.confluent.ksql.metastore.MetaStore;
+import io.confluent.ksql.parser.tree.CreateFunction;
 import io.confluent.ksql.parser.tree.CreateStream;
 import io.confluent.ksql.parser.tree.CreateStreamAsSelect;
 import io.confluent.ksql.parser.tree.CreateTable;
