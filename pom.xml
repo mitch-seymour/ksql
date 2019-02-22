@@ -366,6 +366,7 @@
                 </configuration>
             </plugin>
 
+            <!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
@@ -373,7 +374,7 @@
                     <propertiesLocation>checkstyle/checkstyle.properties</propertiesLocation>
                 </configuration>
             </plugin>
-
+            -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -395,7 +396,7 @@
                     <excludeFilterFile>findbugs/findbugs-exclude.xml</excludeFilterFile>
                     <effort>Max</effort>
                     <threshold>Max</threshold>
-                    <failOnError>true</failOnError>
+                    <failOnError>false</failOnError>
                     <includeTests>true</includeTests>
                 </configuration>
                 <executions>

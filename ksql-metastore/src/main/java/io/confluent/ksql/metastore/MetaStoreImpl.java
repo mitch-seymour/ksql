@@ -38,7 +38,7 @@ public final class MetaStoreImpl implements MutableMetaStore {
   private final Map<String, KsqlTopic> topics = new ConcurrentHashMap<>();
   private final Map<String, SourceInfo> dataSources = new ConcurrentHashMap<>();
   private final Object referentialIntegrityLock = new Object();
-  private final FunctionRegistry functionRegistry;
+  public final FunctionRegistry functionRegistry;
 
   public MetaStoreImpl(final FunctionRegistry functionRegistry) {
     this.functionRegistry = Objects.requireNonNull(functionRegistry, "functionRegistry");

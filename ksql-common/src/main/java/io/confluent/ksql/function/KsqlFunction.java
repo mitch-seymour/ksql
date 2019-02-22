@@ -65,7 +65,7 @@ public final class KsqlFunction {
    *
    * <p>Can be either built-in UDF or true user-supplied.
    */
-  static KsqlFunction create(
+  public static KsqlFunction create(
       final Schema returnType,
       final List<Schema> arguments,
       final String functionName,
@@ -108,7 +108,7 @@ public final class KsqlFunction {
     return arguments;
   }
 
-  String getFunctionName() {
+  public String getFunctionName() {
     return functionName;
   }
 

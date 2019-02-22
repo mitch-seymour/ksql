@@ -33,7 +33,7 @@ public class UdfFactory {
   private final Map<List<FunctionParameter>, KsqlFunction> functions = new LinkedHashMap<>();
 
 
-  UdfFactory(final Class<? extends Kudf> udfClass,
+  public UdfFactory(final Class<? extends Kudf> udfClass,
              final UdfMetadata metadata) {
     this.udfClass = Objects.requireNonNull(udfClass, "udfClass can't be null");
     this.metadata = Objects.requireNonNull(metadata, "metadata can't be null");
