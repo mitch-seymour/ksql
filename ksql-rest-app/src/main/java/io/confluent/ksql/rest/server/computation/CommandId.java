@@ -31,7 +31,8 @@ public class CommandId {
     STREAM,
     TABLE,
     CLUSTER,
-    TERMINATE
+    TERMINATE,
+    FUNCTION
   }
 
   public enum Action {

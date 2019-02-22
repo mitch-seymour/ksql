@@ -47,6 +47,8 @@ public class CommandIdAssigner {
     this.metaStore = metaStore;
     suppliers.put(RegisterTopic.class,
         command -> getTopicCommandId((RegisterTopic) command));
+    suppliers.put(CreateFunction.class,
+        command -> getCreateFunctionCommandId((CreateFunction) command));
     suppliers.put(CreateStream.class,
         command -> getTopicStreamCommandId((CreateStream) command));
     suppliers.put(CreateTable.class,
@@ -87,6 +89,14 @@ public class CommandIdAssigner {
       throw new RuntimeException(String.format("Topic %s already exists", topicName));
     }
     return new CommandId(CommandId.Type.TOPIC, topicName, CommandId.Action.CREATE);
+  }
+
+  private CommandId getCreateFunctionCommandId(final CreateFunction createFunction) {
+    return new CommandId(
+        CommandId.Type.FUNCTION,
+        createFunction.getName().toString(),
+        CommandId.Action.CREATE
+    );
   }
 
   private CommandId getTopicStreamCommandId(final CreateStream createStream) {
