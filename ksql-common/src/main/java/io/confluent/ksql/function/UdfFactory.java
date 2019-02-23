@@ -48,7 +48,8 @@ public class UdfFactory {
   void addFunction(final KsqlFunction ksqlFunction) {
     final List<FunctionParameter> paramTypes
         = mapToFunctionParameter(ksqlFunction.getArguments());
-
+    System.out.println("Args!\n" + ksqlFunction.getArguments());
+    System.out.println("Param types!\n" + paramTypes);
     checkCompatible(ksqlFunction, paramTypes);
     functions.put(paramTypes, ksqlFunction);
   }
@@ -193,6 +194,14 @@ public class UdfFactory {
       // primitive types will match their boxed counterparts. i.e,
       // primitive types are not optional, i.e., they don't accept null.
       return Objects.hash(type);
+    }
+  
+    @Override
+    public String toString() {
+      return "FunctionParameter{"
+          + "type=" + type
+          + ", isOptional=" + isOptional
+          + '}';
     }
 
     boolean isOptional() {

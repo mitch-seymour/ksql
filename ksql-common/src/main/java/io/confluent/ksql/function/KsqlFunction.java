@@ -28,7 +28,7 @@ import org.apache.kafka.connect.data.Schema;
 @Immutable
 public final class KsqlFunction {
 
-  static final String INTERNAL_PATH = "internal";
+  public static final String INTERNAL_PATH = "internal";
 
   private final Schema returnType;
   private final List<Schema> arguments;

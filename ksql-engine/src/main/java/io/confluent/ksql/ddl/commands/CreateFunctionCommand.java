@@ -15,6 +15,7 @@
 package io.confluent.ksql.ddl.commands;
 
 import java.util.Collections;
+import java.util.function.Function;
 
 import org.apache.kafka.connect.data.Schema;
 
@@ -26,18 +27,11 @@ import io.confluent.ksql.function.udf.UdfMetadata;
 import io.confluent.ksql.metastore.MetaStoreImpl;
 import io.confluent.ksql.metastore.MutableMetaStore;
 import io.confluent.ksql.parser.tree.CreateFunction;
+import io.confluent.ksql.util.KsqlConfig;
 import io.confluent.ksql.util.KsqlException;
 
 public class CreateFunctionCommand implements DdlCommand {
   private final CreateFunction createFunction;
-
-  public static class Func2 implements Kudf {
-
-    @Override
-    public Object evaluate(final Object... args) {
-      return null;
-    }
-  }
 
   CreateFunctionCommand(
       final String sqlExpression,
@@ -53,6 +47,21 @@ public class CreateFunctionCommand implements DdlCommand {
     this.createFunction = createFunction;
   }
 
+  public static Class<? extends Kudf> getKudf() {
+    class CustomKudf implements Kudf {
+      public CustomKudf() {
+        System.out.println("Instantiating CustomKudf");
+      }
+
+      @Override
+      public Object evaluate(final Object... args) {
+        return "hello,";
+      }
+    }
+
+    return CustomKudf.class;
+  }
+
   @Override
   public DdlCommandResult run(final MutableMetaStore metaStore) {
 
@@ -62,31 +71,41 @@ public class CreateFunctionCommand implements DdlCommand {
       if (m.functionRegistry instanceof MutableFunctionRegistry) {
         final MutableFunctionRegistry f = (MutableFunctionRegistry) m.functionRegistry;
 
-        // TODO: update this with new method
-        KsqlFunction ksqlFunction = KsqlFunction.createLegacyBuiltIn(
+        // create an custom Kudf class that implements the script
+        // note: anonymous classes don't work here because they lack a constructor,
+        // and the codegen throws a missing <init> method
+        Class<? extends Kudf> kudfClass = getKudf();
+
+        String functionName = createFunction.getName().toString();
+
+        final Function<KsqlConfig, Kudf> udfFactory = ksqlConfig -> {
+          try {
+            return kudfClass.newInstance();
+          } catch (Exception e) {
+            throw new KsqlException("Failed to create instance of kudfClass "
+            + kudfClass + " for function " + createFunction.getName(), e);
+          }
+        };
+
+        KsqlFunction ksqlFunction = KsqlFunction.create(
             Schema.STRING_SCHEMA,
             Collections.singletonList(Schema.OPTIONAL_STRING_SCHEMA),
-            createFunction.getName().toString(),
-            Func2.class);
+            functionName,
+            kudfClass,
+            udfFactory,
+            "hello, world",
+            KsqlFunction.INTERNAL_PATH);
+        
+        final UdfMetadata metadata = new UdfMetadata(ksqlFunction.getFunctionName(),
+            "description of my function",
+            "Mitch Seymour",
+            "0.1.0",
+            KsqlFunction.INTERNAL_PATH,
+            true);
 
-        KsqlFunction ksqlFunction2 = KsqlFunction.createLegacyBuiltIn(
-            Schema.STRING_SCHEMA,
-            Collections.singletonList(Schema.BOOLEAN_SCHEMA),
-            createFunction.getName().toString(),
-            Func2.class);
-
-        UdfFactory udfFactory = new UdfFactory(
-            ksqlFunction.getKudfClass(),
-            new UdfMetadata(ksqlFunction.getFunctionName(),
-                "description of my function",
-                "Mitch Seymour",
-                "0.1.0",
-                "",
-                false));
-          
-        f.ensureFunctionFactory(udfFactory);
+        
+        f.ensureFunctionFactory(new UdfFactory(ksqlFunction.getKudfClass(), metadata));
         f.addFunction(ksqlFunction);
-        f.addFunction(ksqlFunction2);
       }
     }
     /*

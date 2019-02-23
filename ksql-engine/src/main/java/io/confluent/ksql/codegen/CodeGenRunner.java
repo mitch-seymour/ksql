@@ -135,9 +135,11 @@ public class CodeGenRunner {
           new GenericRowValueTypeEnforcer(schema),
           expression);
     } catch (final KsqlException | CompileException e) {
+      System.out.println("Stacktrace");
+      e.printStackTrace();
       throw new KsqlException("Code generation failed for " + type
           + ": " + e.getMessage()
-          + ". expression:" + expression + ", schema:" + schema, e);
+          + ". expression:" + expression + ", schema:" + schema + "error: " + e.getMessage(), e);
     } catch (final Exception e) {
       throw new RuntimeException("Unexpected error generating code for " + type
           + ". expression:" + expression, e);
