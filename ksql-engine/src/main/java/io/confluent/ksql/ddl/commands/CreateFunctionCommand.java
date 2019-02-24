@@ -14,6 +14,7 @@
 
 package io.confluent.ksql.ddl.commands;
 
+import java.lang.reflect.Constructor;
 import java.util.Collections;
 import java.util.function.Function;
 
@@ -47,15 +48,23 @@ public class CreateFunctionCommand implements DdlCommand {
     this.createFunction = createFunction;
   }
 
+  /**
+   * A method for retrieving a custom Kudf class
+   */
   public static Class<? extends Kudf> getKudf() {
     class CustomKudf implements Kudf {
-      public CustomKudf() {
+      private final String language;
+      private final String funcName;
+
+      public CustomKudf(String language, String funcName) {
         System.out.println("Instantiating CustomKudf");
+        this.language = language;
+        this.funcName = funcName;
       }
 
       @Override
       public Object evaluate(final Object... args) {
-        return "hello,";
+        return "hello, " + funcName + " (" + language + ")";
       }
     }
 
@@ -80,7 +89,9 @@ public class CreateFunctionCommand implements DdlCommand {
 
         final Function<KsqlConfig, Kudf> udfFactory = ksqlConfig -> {
           try {
-            return kudfClass.newInstance();
+            Constructor<? extends Kudf> constructor = 
+                kudfClass.getConstructor(String.class, String.class);
+            return constructor.newInstance("javascript", createFunction.getName().toString());
           } catch (Exception e) {
             throw new KsqlException("Failed to create instance of kudfClass "
             + kudfClass + " for function " + createFunction.getName(), e);
