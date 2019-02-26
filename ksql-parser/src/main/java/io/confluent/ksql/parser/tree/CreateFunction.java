@@ -26,21 +26,28 @@ public class CreateFunction
     extends Statement implements ExecutableDdlStatement {
   private final QualifiedName name;
   private final List<TableElement> elements;
+  private final String language;
+  private final String script;
 
   public CreateFunction(
       final QualifiedName name,
-      final List<TableElement> elements) {
-    this(Optional.empty(), name, elements);
+      final List<TableElement> elements,
+      final String language,
+      final String script) {
+    this(Optional.empty(), name, elements, language, script);
   }
 
   public CreateFunction(
       final Optional<NodeLocation> location,
       final QualifiedName name,
-      final List<TableElement> elements) {
+      final List<TableElement> elements,
+      final String language,
+      final String script) {
     super(location);
-    System.out.println("CreateFunction::constructor");
     this.name = requireNonNull(name, "function name is null");
     this.elements = ImmutableList.copyOf(requireNonNull(elements, "elements is null"));
+    this.language = requireNonNull(language, "language name is null");
+    this.script = requireNonNull(script, "ud(a)f script is null");
   }
 
   public QualifiedName getName() {
@@ -51,9 +58,16 @@ public class CreateFunction
     return elements;
   }
 
+  public String getLanguage() {
+    return language;
+  }
+
+  public String getScript() {
+    return script;
+  }
+
   @Override
   public <R, C> R accept(final AstVisitor<R, C> visitor, final C context) {
-    System.out.println("CreateFunction::accept");
     return visitor.visitCreateFunction(this, context);
   }
 
@@ -72,7 +86,9 @@ public class CreateFunction
     }
     final CreateFunction o = (CreateFunction) obj;
     return Objects.equals(name, o.name)
-           && Objects.equals(elements, o.elements);
+           && Objects.equals(elements, o.elements)
+           && Objects.equals(language, o.language)
+           && Objects.equals(script, o.script);
   }
 
   @Override
@@ -80,6 +96,8 @@ public class CreateFunction
     return toStringHelper(this)
         .add("name", name)
         .add("elements", elements)
+        .add("language", language)
+        .add("script", script)
         .toString();
   }
 }

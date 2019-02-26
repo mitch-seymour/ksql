@@ -52,7 +52,9 @@ statement
     | CREATE FUNCTION qualifiedName
                 ('(' tableElement (',' tableElement)* ')')?
                 RETURNS type
-                LANGUAGE identifier                                         #createFunction
+                LANGUAGE languageName
+                AS
+                udfScript                                                     #createFunction
     | CREATE STREAM (IF NOT EXISTS)? qualifiedName
                 ('(' tableElement (',' tableElement)* ')')?
                 (WITH tableProperties)?                                     #createStream
@@ -321,6 +323,14 @@ qualifiedName
     : identifier ('.' identifier)*
     ;
 
+languageName
+    : identifier
+    ;
+
+udfScript
+    : UDF_SCRIPT
+    ;
+
 identifier
     : IDENTIFIER             #unquotedIdentifier
     | QUOTED_IDENTIFIER      #quotedIdentifierAlternative
@@ -507,6 +517,10 @@ DIGIT_IDENTIFIER
 
 QUOTED_IDENTIFIER
     : '"' ( ~'"' | '""' )* '"'
+    ;
+
+UDF_SCRIPT
+    : HEREDOC ~'$'~'$'* HEREDOC
     ;
 
 BACKQUOTED_IDENTIFIER

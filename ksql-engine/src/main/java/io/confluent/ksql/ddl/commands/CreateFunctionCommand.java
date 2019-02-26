@@ -55,16 +55,19 @@ public class CreateFunctionCommand implements DdlCommand {
     class CustomKudf implements Kudf {
       private final String language;
       private final String funcName;
+      private final String script;
 
-      public CustomKudf(String language, String funcName) {
+      public CustomKudf(CreateFunction cf) {
         System.out.println("Instantiating CustomKudf");
-        this.language = language;
-        this.funcName = funcName;
+        this.language = cf.getLanguage();
+        this.funcName = cf.getName().toString();
+        this.script = cf.getScript();
       }
 
       @Override
       public Object evaluate(final Object... args) {
-        return "hello, " + funcName + " (" + language + ")";
+        return String.format("func: %s, lang: %s, script: %s",
+            funcName, language, script);
       }
     }
 
@@ -75,6 +78,7 @@ public class CreateFunctionCommand implements DdlCommand {
   public DdlCommandResult run(final MutableMetaStore metaStore) {
 
     // this is ugly af. just poc'ing
+    // TODO: wrap in a try-catch
     if (metaStore instanceof MetaStoreImpl) {
       final MetaStoreImpl m = (MetaStoreImpl) metaStore;
       if (m.functionRegistry instanceof MutableFunctionRegistry) {
@@ -90,8 +94,8 @@ public class CreateFunctionCommand implements DdlCommand {
         final Function<KsqlConfig, Kudf> udfFactory = ksqlConfig -> {
           try {
             Constructor<? extends Kudf> constructor = 
-                kudfClass.getConstructor(String.class, String.class);
-            return constructor.newInstance("javascript", createFunction.getName().toString());
+                kudfClass.getConstructor(CreateFunction.class);
+            return constructor.newInstance(createFunction);
           } catch (Exception e) {
             throw new KsqlException("Failed to create instance of kudfClass "
             + kudfClass + " for function " + createFunction.getName(), e);
@@ -115,26 +119,13 @@ public class CreateFunctionCommand implements DdlCommand {
             true);
 
         
+        System.out.println("Creating function");
         f.ensureFunctionFactory(new UdfFactory(ksqlFunction.getKudfClass(), metadata));
         f.addFunction(ksqlFunction);
       }
+      return new DdlCommandResult(true, "Function created");
     }
-    /*
-    final KsqlTable ksqlTable = new KsqlTable<>(
-        sqlExpression,
-        sourceName,
-        schema,
-        (keyColumnName.isEmpty())
-          ? null : SchemaUtil.getFieldByName(schema, keyColumnName).orElse(null),
-        timestampExtractionPolicy,
-        metaStore.getTopic(topicName),
-        stateStoreName, keySerde
-    );
-
-    metaStore.putSource(ksqlTable.cloneWithTimeKeyColumns());
-    */
-    System.out.println("listing functions");
-    System.out.println(metaStore.listFunctions());
-    return new DdlCommandResult(true, "Function created");
+    // TODO: make this more informative
+    return new DdlCommandResult(true, "Could not create function");
   }
 }

@@ -48,8 +48,6 @@ public class UdfFactory {
   void addFunction(final KsqlFunction ksqlFunction) {
     final List<FunctionParameter> paramTypes
         = mapToFunctionParameter(ksqlFunction.getArguments());
-    System.out.println("Args!\n" + ksqlFunction.getArguments());
-    System.out.println("Param types!\n" + paramTypes);
     checkCompatible(ksqlFunction, paramTypes);
     functions.put(paramTypes, ksqlFunction);
   }
