@@ -14,7 +14,6 @@
 
 package io.confluent.ksql.parser.tree;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 import java.util.ArrayList;
@@ -129,11 +128,6 @@ public class CreateFunction
 
   @Override
   public String toString() {
-    return toStringHelper(this)
-        .add("name", name)
-        .add("elements", elements)
-        .add("language", language)
-        .add("script", script)
-        .toString();
+    return getName();
   }
 }

@@ -33,6 +33,7 @@ import io.confluent.ksql.metastore.StructuredDataSource;
 import io.confluent.ksql.parser.KsqlParser.ParsedStatement;
 import io.confluent.ksql.parser.KsqlParser.PreparedStatement;
 import io.confluent.ksql.parser.tree.CreateAsSelect;
+import io.confluent.ksql.parser.tree.CreateFunction;
 import io.confluent.ksql.parser.tree.DescribeFunction;
 import io.confluent.ksql.parser.tree.ExecutableDdlStatement;
 import io.confluent.ksql.parser.tree.Explain;
@@ -799,6 +800,8 @@ public class KsqlResource {
                 castValidator(RequestValidator::validateShowColumns, ShowColumns.class))
             .put(Explain.class,
                 castValidator(RequestValidator::validateExplain, Explain.class))
+            .put(CreateFunction.class,
+                castValidator(RequestValidator::validateCreateFunction, CreateFunction.class))
             .put(DescribeFunction.class,
                 castValidator(RequestValidator::validateDescribeFunction, DescribeFunction.class))
             .put(TerminateQuery.class,
@@ -926,6 +929,10 @@ public class KsqlResource {
 
     private void validateExplain(final PreparedStatement<Explain> statement) {
       explain(statement, scopedPropertyOverrides, ksqlConfig, executionSandbox);
+    }
+
+    private void validateCreateFunction(final PreparedStatement<CreateFunction> statement) {
+      // TODO: add validation logic
     }
 
     private void validateDescribeFunction(final PreparedStatement<DescribeFunction> statement) {

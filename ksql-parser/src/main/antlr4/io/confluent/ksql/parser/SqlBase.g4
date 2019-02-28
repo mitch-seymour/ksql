@@ -54,7 +54,8 @@ statement
                 RETURNS type
                 LANGUAGE languageName
                 AS
-                udfScript                                                     #createFunction
+                udfScript
+                 (WITH functionProperties)?                                 #createFunction
     | CREATE STREAM (IF NOT EXISTS)? qualifiedName
                 ('(' tableElement (',' tableElement)* ')')?
                 (WITH tableProperties)?                                     #createStream
@@ -89,6 +90,14 @@ tableProperties
     ;
 
 tableProperty
+    : identifier EQ expression
+    ;
+
+functionProperties
+    : '(' functionProperty (',' functionProperty)* ')'
+    ;
+
+functionProperty
     : identifier EQ expression
     ;
 

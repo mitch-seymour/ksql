@@ -92,14 +92,12 @@ public class CreateFunctionCommand implements DdlCommand {
       @SuppressWarnings("unchecked")
       @Override
       public Object evaluate(final Object... args) {
-        System.out.println("Running script 1");
         Object value;
         try {
           value = function.execute(args).as(returnType);
-          System.out.println("Running script 3");
         } catch (Exception e) {
+          // TODO: handle this properly
           System.out.println("Error executing function: " + toString() + ", " + e.getMessage());
-          e.printStackTrace();
           value = null;
         }
         return value;
@@ -113,7 +111,6 @@ public class CreateFunctionCommand implements DdlCommand {
   public DdlCommandResult run(final MutableMetaStore metaStore) {
 
     // this is ugly af. just poc'ing
-    // TODO: wrap in a try-catch
     if (metaStore instanceof MetaStoreImpl) {
       final MetaStoreImpl m = (MetaStoreImpl) metaStore;
       if (m.functionRegistry instanceof MutableFunctionRegistry) {
@@ -154,10 +151,14 @@ public class CreateFunctionCommand implements DdlCommand {
             KsqlFunction.INTERNAL_PATH,
             true);
 
-        // TODO: figure out why this code path is called twice remove this debug text. 
-        System.out.println("Creating function from thread: " + Thread.currentThread().getName());
-        f.ensureFunctionFactory(new UdfFactory(ksqlFunction.getKudfClass(), metadata));
-        f.addFunction(ksqlFunction);
+        try {
+          f.ensureFunctionFactory(new UdfFactory(ksqlFunction.getKudfClass(), metadata));
+          f.addFunction(ksqlFunction);
+        } catch (KsqlException e) {
+          final String errorMessage =
+                  String.format("Cannot create function '%s': %s", functionName, e.getMessage());
+          throw new KsqlException(errorMessage, e);
+        }
       }
       return new DdlCommandResult(true, "Function created");
     }
