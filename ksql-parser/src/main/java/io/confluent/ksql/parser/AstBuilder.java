@@ -123,6 +123,7 @@ import io.confluent.ksql.util.DataSourceExtractor;
 import io.confluent.ksql.util.KsqlConstants;
 import io.confluent.ksql.util.KsqlException;
 import io.confluent.ksql.util.Pair;
+import io.confluent.ksql.util.TypeUtil;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -265,7 +266,8 @@ public class AstBuilder extends SqlBaseBaseVisitor<Node> {
         getQualifiedName(context.qualifiedName()),
         visit(context.tableElement(), TableElement.class),
         language,
-        script
+        script,
+        TypeUtil.getTypeSchema(getType(context.type()))
         );
   }
 

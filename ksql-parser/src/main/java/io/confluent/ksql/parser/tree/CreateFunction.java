@@ -17,7 +17,13 @@ package io.confluent.ksql.parser.tree;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
+
 import com.google.common.collect.ImmutableList;
+import io.confluent.ksql.util.TypeUtil;
+import org.apache.kafka.connect.data.Schema;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -28,13 +34,15 @@ public class CreateFunction
   private final List<TableElement> elements;
   private final String language;
   private final String script;
+  private final Schema returnType;
 
   public CreateFunction(
       final QualifiedName name,
       final List<TableElement> elements,
       final String language,
-      final String script) {
-    this(Optional.empty(), name, elements, language, script);
+      final String script,
+      final Schema returnType) {
+    this(Optional.empty(), name, elements, language, script, returnType);
   }
 
   public CreateFunction(
@@ -42,24 +50,52 @@ public class CreateFunction
       final QualifiedName name,
       final List<TableElement> elements,
       final String language,
-      final String script) {
+      final String script,
+      final Schema returnType) {
     super(location);
     this.name = requireNonNull(name, "function name is null");
     this.elements = ImmutableList.copyOf(requireNonNull(elements, "elements is null"));
-    this.language = requireNonNull(language, "language name is null");
+    this.language = formatLanguage(requireNonNull(language, "language name is null"));
     this.script = requireNonNull(script, "ud(a)f script is null");
+    this.returnType = requireNonNull(returnType, "reutrn type is null");
   }
 
-  public QualifiedName getName() {
-    return name;
+  public boolean isExecutable() {
+    try (Context context = Context.create(getLanguage())) {
+      Value function = context.eval(getLanguage(), getScript());
+      return function.canExecute();
+    } catch (Exception e) {
+      // TODO: make sure the exception bubbles up somewhere
+      return false;
+    }
   }
 
-  public List<TableElement> getElements() {
-    return elements;
+  public String formatLanguage(String lang) {
+    lang = lang.toLowerCase().trim();
+    if (lang.equals("javascript")) {
+      lang = "js";
+    }
+    return lang;
+  }
+
+  public String getName() {
+    return name.toString();
+  }
+
+  public List<Schema> getArguments() {
+    List<Schema> arguments = new ArrayList<>();
+    for (TableElement element : elements) {
+      arguments.add(TypeUtil.getTypeSchema(element.getType()));
+    }
+    return arguments;
   }
 
   public String getLanguage() {
     return language;
+  }
+
+  public Schema getReturnType() {
+    return returnType;
   }
 
   public String getScript() {

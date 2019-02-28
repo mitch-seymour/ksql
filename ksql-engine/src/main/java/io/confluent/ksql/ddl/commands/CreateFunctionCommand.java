@@ -14,11 +14,13 @@
 
 package io.confluent.ksql.ddl.commands;
 
+import static com.google.common.base.MoreObjects.toStringHelper;
+
 import java.lang.reflect.Constructor;
-import java.util.Collections;
 import java.util.function.Function;
 
-import org.apache.kafka.connect.data.Schema;
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
 
 import io.confluent.ksql.function.KsqlFunction;
 import io.confluent.ksql.function.MutableFunctionRegistry;
@@ -30,6 +32,8 @@ import io.confluent.ksql.metastore.MutableMetaStore;
 import io.confluent.ksql.parser.tree.CreateFunction;
 import io.confluent.ksql.util.KsqlConfig;
 import io.confluent.ksql.util.KsqlException;
+import io.confluent.ksql.util.SchemaUtil;
+import scala.language;
 
 public class CreateFunctionCommand implements DdlCommand {
   private final CreateFunction createFunction;
@@ -39,35 +43,66 @@ public class CreateFunctionCommand implements DdlCommand {
       final CreateFunction createFunction
   ) {
 
-    if (1 == 2) {
+    if (!createFunction.isExecutable()) {
+      // TODO: improve the error text here
       throw new KsqlException(
-          "Cannot define a TABLE without providing the KEY column name in the WITH clause."
+          "Function is not executable"
       );
     }
 
     this.createFunction = createFunction;
   }
 
+  @Override
+  public String toString() {
+    return toStringHelper(this)
+        .add("name", createFunction.getName())
+        .add("language", createFunction.getLanguage())
+        .toString();
+  }
+
   /**
-   * A method for retrieving a custom Kudf class
+   * A method for retrieving a custom Kudf class. This class gets instantiated
+   * everytime a query is created with the custom function.
    */
   public static Class<? extends Kudf> getKudf() {
     class CustomKudf implements Kudf {
+      private final Context context;
+      private final Value function;
       private final String language;
-      private final String funcName;
-      private final String script;
+      private final String name;
+      private final Class returnType;
 
       public CustomKudf(CreateFunction cf) {
-        System.out.println("Instantiating CustomKudf");
         this.language = cf.getLanguage();
-        this.funcName = cf.getName().toString();
-        this.script = cf.getScript();
+        this.name = cf.getName();
+        this.context = Context.create(language);
+        this.function = context.eval(language, cf.getScript());
+        this.returnType = SchemaUtil.getJavaType(cf.getReturnType());
       }
 
       @Override
+      public String toString() {
+        return toStringHelper(this)
+            .add("name", name)
+            .add("language", language)
+            .toString();
+      }
+
+      @SuppressWarnings("unchecked")
+      @Override
       public Object evaluate(final Object... args) {
-        return String.format("func: %s, lang: %s, script: %s",
-            funcName, language, script);
+        System.out.println("Running script 1");
+        Object value;
+        try {
+          value = function.execute(args).as(returnType);
+          System.out.println("Running script 3");
+        } catch (Exception e) {
+          System.out.println("Error executing function: " + toString() + ", " + e.getMessage());
+          e.printStackTrace();
+          value = null;
+        }
+        return value;
       }
     }
 
@@ -89,7 +124,7 @@ public class CreateFunctionCommand implements DdlCommand {
         // and the codegen throws a missing <init> method
         Class<? extends Kudf> kudfClass = getKudf();
 
-        String functionName = createFunction.getName().toString();
+        String functionName = createFunction.getName();
 
         final Function<KsqlConfig, Kudf> udfFactory = ksqlConfig -> {
           try {
@@ -102,24 +137,25 @@ public class CreateFunctionCommand implements DdlCommand {
           }
         };
 
+        String description = "Scripted UD(A)F: " + toString();
         KsqlFunction ksqlFunction = KsqlFunction.create(
-            Schema.STRING_SCHEMA,
-            Collections.singletonList(Schema.OPTIONAL_STRING_SCHEMA),
+            createFunction.getReturnType(),
+            createFunction.getArguments(),
             functionName,
             kudfClass,
             udfFactory,
-            "hello, world",
+            description,
             KsqlFunction.INTERNAL_PATH);
         
         final UdfMetadata metadata = new UdfMetadata(ksqlFunction.getFunctionName(),
-            "description of my function",
+            description,
             "Mitch Seymour",
             "0.1.0",
             KsqlFunction.INTERNAL_PATH,
             true);
 
-        
-        System.out.println("Creating function");
+        // TODO: figure out why this code path is called twice remove this debug text. 
+        System.out.println("Creating function from thread: " + Thread.currentThread().getName());
         f.ensureFunctionFactory(new UdfFactory(ksqlFunction.getKudfClass(), metadata));
         f.addFunction(ksqlFunction);
       }
