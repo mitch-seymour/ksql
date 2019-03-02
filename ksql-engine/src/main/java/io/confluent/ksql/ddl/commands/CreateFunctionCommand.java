@@ -14,8 +14,6 @@
 
 package io.confluent.ksql.ddl.commands;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-
 import java.lang.reflect.Constructor;
 import java.util.function.Function;
 
@@ -55,10 +53,7 @@ public class CreateFunctionCommand implements DdlCommand {
 
   @Override
   public String toString() {
-    return toStringHelper(this)
-        .add("name", createFunction.getName())
-        .add("language", createFunction.getLanguage())
-        .toString();
+    return createFunction.getName();
   }
 
   /**
@@ -83,10 +78,7 @@ public class CreateFunctionCommand implements DdlCommand {
 
       @Override
       public String toString() {
-        return toStringHelper(this)
-            .add("name", name)
-            .add("language", language)
-            .toString();
+        return name;
       }
 
       @SuppressWarnings("unchecked")
@@ -121,8 +113,6 @@ public class CreateFunctionCommand implements DdlCommand {
         // and the codegen throws a missing <init> method
         Class<? extends Kudf> kudfClass = getKudf();
 
-        String functionName = createFunction.getName();
-
         final Function<KsqlConfig, Kudf> udfFactory = ksqlConfig -> {
           try {
             Constructor<? extends Kudf> constructor = 
@@ -134,29 +124,34 @@ public class CreateFunctionCommand implements DdlCommand {
           }
         };
 
-        String description = "Scripted UD(A)F: " + toString();
         KsqlFunction ksqlFunction = KsqlFunction.create(
             createFunction.getReturnType(),
             createFunction.getArguments(),
-            functionName,
+            createFunction.getName(),
             kudfClass,
             udfFactory,
-            description,
+            createFunction.getDescription(),
             KsqlFunction.INTERNAL_PATH);
         
-        final UdfMetadata metadata = new UdfMetadata(ksqlFunction.getFunctionName(),
-            description,
-            "Mitch Seymour",
-            "0.1.0",
+        final UdfMetadata metadata = new UdfMetadata(
+            createFunction.getName(),
+            createFunction.getOverview(),
+            createFunction.getAuthor(),
+            createFunction.getVersion(),
             KsqlFunction.INTERNAL_PATH,
             true);
 
         try {
           f.ensureFunctionFactory(new UdfFactory(ksqlFunction.getKudfClass(), metadata));
-          f.addFunction(ksqlFunction);
+          if (createFunction.shouldReplace()) {
+            f.addOrReplaceFunction(ksqlFunction);
+          } else {
+            f.addFunction(ksqlFunction);
+          }
         } catch (KsqlException e) {
           final String errorMessage =
-                  String.format("Cannot create function '%s': %s", functionName, e.getMessage());
+                  String.format("Cannot create function '%s': %s",
+                      createFunction.getName(), e.getMessage());
           throw new KsqlException(errorMessage, e);
         }
       }

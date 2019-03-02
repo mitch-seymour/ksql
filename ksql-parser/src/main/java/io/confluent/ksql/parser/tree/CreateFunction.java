@@ -19,11 +19,14 @@ import static java.util.Objects.requireNonNull;
 import java.util.ArrayList;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+
 import io.confluent.ksql.util.TypeUtil;
 import org.apache.kafka.connect.data.Schema;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -34,14 +37,26 @@ public class CreateFunction
   private final String language;
   private final String script;
   private final Schema returnType;
+  private final Map<String, Expression> properties;
+  private final Boolean replace;
+
+  // TODO: should this live somewhere else?
+  private final class Config {
+    public static final String AUTHOR_PROPERTY = "AUTHOR";
+    public static final String DESCRIPTION_PROPERTY = "DESCRIPTION";
+    public static final String OVERVIEW_PROPERTY = "OVERVIEW";
+    public static final String VERSION_PROPERTY = "VERSION";
+  }
 
   public CreateFunction(
       final QualifiedName name,
       final List<TableElement> elements,
       final String language,
       final String script,
-      final Schema returnType) {
-    this(Optional.empty(), name, elements, language, script, returnType);
+      final Schema returnType,
+      final Map<String, Expression> properties,
+      final Boolean replace) {
+    this(Optional.empty(), name, elements, language, script, returnType, properties, replace);
   }
 
   public CreateFunction(
@@ -50,13 +65,17 @@ public class CreateFunction
       final List<TableElement> elements,
       final String language,
       final String script,
-      final Schema returnType) {
+      final Schema returnType,
+      final Map<String, Expression> properties,
+      final Boolean replace) {
     super(location);
     this.name = requireNonNull(name, "function name is null");
     this.elements = ImmutableList.copyOf(requireNonNull(elements, "elements is null"));
     this.language = formatLanguage(requireNonNull(language, "language name is null"));
-    this.script = requireNonNull(script, "ud(a)f script is null");
-    this.returnType = requireNonNull(returnType, "reutrn type is null");
+    this.script = requireNonNull(script, "udf script is null");
+    this.returnType = requireNonNull(returnType, "return type is null");
+    this.properties = ImmutableMap.copyOf(requireNonNull(properties, "properties is null"));
+    this.replace = requireNonNull(replace, "replace is null");
   }
 
   public boolean isExecutable() {
@@ -75,6 +94,34 @@ public class CreateFunction
       lang = "js";
     }
     return lang;
+  }
+
+  public String getAuthor() {
+    if (properties.containsKey(Config.AUTHOR_PROPERTY)) {
+      return properties.get(Config.AUTHOR_PROPERTY).toString();
+    }
+    return "";
+  }
+
+  public String getDescription() {
+    if (properties.containsKey(Config.DESCRIPTION_PROPERTY)) {
+      return properties.get(Config.DESCRIPTION_PROPERTY).toString();
+    }
+    return "";
+  }
+
+  public String getOverview() {
+    if (properties.containsKey(Config.OVERVIEW_PROPERTY)) {
+      return properties.get(Config.OVERVIEW_PROPERTY).toString();
+    }
+    return "";
+  }
+
+  public String getVersion() {
+    if (properties.containsKey(Config.VERSION_PROPERTY)) {
+      return properties.get(Config.VERSION_PROPERTY).toString();
+    }
+    return "";
   }
 
   public String getName() {
@@ -99,6 +146,10 @@ public class CreateFunction
 
   public String getScript() {
     return script;
+  }
+
+  public Boolean shouldReplace() {
+    return replace;
   }
 
   @Override

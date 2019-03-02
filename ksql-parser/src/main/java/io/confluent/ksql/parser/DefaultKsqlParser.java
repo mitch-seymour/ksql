@@ -91,6 +91,7 @@ public class DefaultKsqlParser implements KsqlParser {
       throw new ParseFailedException(
           e.getRawMessage(), stmt.getStatementText(), e.getCause());
     } catch (final Exception e) {
+      e.printStackTrace();
       throw new ParseFailedException(
           "Failed to prepare statement: " + e.getMessage(), stmt.getStatementText(), e);
     }

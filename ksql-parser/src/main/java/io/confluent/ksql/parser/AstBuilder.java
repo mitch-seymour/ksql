@@ -22,6 +22,8 @@ import com.google.common.collect.ImmutableMap;
 import io.confluent.ksql.metastore.KsqlStream;
 import io.confluent.ksql.metastore.KsqlTopic;
 import io.confluent.ksql.metastore.StructuredDataSource;
+import io.confluent.ksql.parser.SqlBaseParser.FunctionPropertiesContext;
+import io.confluent.ksql.parser.SqlBaseParser.FunctionPropertyContext;
 import io.confluent.ksql.parser.SqlBaseParser.IntegerLiteralContext;
 import io.confluent.ksql.parser.SqlBaseParser.NumberContext;
 import io.confluent.ksql.parser.SqlBaseParser.TablePropertiesContext;
@@ -180,6 +182,20 @@ public class AstBuilder extends SqlBaseBaseVisitor<Node> {
 
   // ******************* statements **********************
 
+  private Map<String, Expression> processFunctionProperties(
+      final FunctionPropertiesContext functionPropertiesContext
+  ) {
+    final ImmutableMap.Builder<String, Expression> properties = ImmutableMap.builder();
+    if (functionPropertiesContext != null) {
+      for (final FunctionPropertyContext prop : functionPropertiesContext.functionProperty()) {
+        properties.put(
+            getIdentifierText(prop.identifier()),
+            (Expression) visit(prop.expression())
+        );
+      }
+    }
+    return properties.build();
+  }
 
   private Map<String, Expression> processTableProperties(
       final TablePropertiesContext tablePropertiesContext
@@ -261,13 +277,16 @@ public class AstBuilder extends SqlBaseBaseVisitor<Node> {
   public Node visitCreateFunction(final SqlBaseParser.CreateFunctionContext context) {
     final String language = getIdentifierText(context.languageName().identifier());
     final String script = context.udfScript().getText().replaceAll("\\$\\$", "").trim();
+    System.out.println("Replace ? " + context.REPLACE() != null);
     return new CreateFunction(
         Optional.of(getLocation(context)),
         getQualifiedName(context.qualifiedName()),
         visit(context.tableElement(), TableElement.class),
         language,
         script,
-        TypeUtil.getTypeSchema(getType(context.type()))
+        TypeUtil.getTypeSchema(getType(context.type())),
+        processFunctionProperties(context.functionProperties()),
+        context.REPLACE() != null
         );
   }
 

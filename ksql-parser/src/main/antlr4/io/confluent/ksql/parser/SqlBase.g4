@@ -49,13 +49,13 @@ statement
     | REGISTER TOPIC (IF NOT EXISTS)? qualifiedName
             (WITH tableProperties)?                                         #registerTopic
 
-    | CREATE FUNCTION qualifiedName
+    | CREATE (OR REPLACE)? FUNCTION qualifiedName
                 ('(' tableElement (',' tableElement)* ')')?
                 RETURNS type
                 LANGUAGE languageName
                 AS
                 udfScript
-                 (WITH functionProperties)?                                 #createFunction
+                (WITH functionProperties)?                                  #createFunction
     | CREATE STREAM (IF NOT EXISTS)? qualifiedName
                 ('(' tableElement (',' tableElement)* ')')?
                 (WITH tableProperties)?                                     #createStream
@@ -68,6 +68,7 @@ statement
     | CREATE TABLE (IF NOT EXISTS)? qualifiedName
             (WITH tableProperties)? AS query                                #createTableAs
     | INSERT INTO qualifiedName query (PARTITION BY identifier)?            #insertInto
+    | DROP FUNCTION (IF EXISTS)? qualifiedName                              #dropFunction
     | DROP TOPIC (IF EXISTS)? qualifiedName                                 #dropTopic
     | DROP STREAM (IF EXISTS)? qualifiedName (DELETE TOPIC)?                #dropStream
     | DROP TABLE (IF EXISTS)? qualifiedName  (DELETE TOPIC)?                #dropTable
@@ -475,6 +476,7 @@ SCRIPT: 'SCRIPT';
 RETURNS: 'RETURNS';
 LANGUAGE: 'LANGUAGE';
 HEREDOC: '$$';
+REPLACE: 'REPLACE';
 
 IF: 'IF';
 
