@@ -23,6 +23,7 @@ import io.confluent.ksql.ddl.commands.DdlCommand;
 import io.confluent.ksql.ddl.commands.DdlCommandExec;
 import io.confluent.ksql.ddl.commands.DdlCommandResult;
 import io.confluent.ksql.function.FunctionRegistry;
+import io.confluent.ksql.function.MutableFunctionRegistry;
 import io.confluent.ksql.internal.KsqlEngineMetrics;
 import io.confluent.ksql.metastore.KsqlTopic;
 import io.confluent.ksql.metastore.MetaStore;
@@ -107,7 +108,7 @@ public class KsqlEngine implements KsqlExecutionContext, Closeable {
   public KsqlEngine(
       final ServiceContext serviceContext,
       final ProcessingLogContext processingLogContext,
-      final FunctionRegistry functionRegistry,
+      final MutableFunctionRegistry functionRegistry,
       final String serviceId
   ) {
     this(
@@ -174,6 +175,11 @@ public class KsqlEngine implements KsqlExecutionContext, Closeable {
   @Override
   public MetaStore getMetaStore() {
     return primaryContext.metaStore;
+  }
+
+  @Override
+  public FunctionRegistry getFunctionRegistry() {
+    return primaryContext.metaStore.getFunctionRegistry();
   }
 
   public DdlCommandExec getDdlCommandExec() {
@@ -722,6 +728,11 @@ public class KsqlEngine implements KsqlExecutionContext, Closeable {
     @Override
     public MetaStore getMetaStore() {
       return engineContext.metaStore;
+    }
+
+    @Override
+    public FunctionRegistry getFunctionRegistry() {
+      return engineContext.metaStore.getFunctionRegistry();
     }
 
     @Override

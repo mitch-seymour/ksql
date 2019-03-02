@@ -14,14 +14,10 @@
 
 package io.confluent.ksql.metastore;
 
-import io.confluent.ksql.function.AggregateFunctionFactory;
-import io.confluent.ksql.function.FunctionRegistry;
-import io.confluent.ksql.function.KsqlAggregateFunction;
-import io.confluent.ksql.function.UdfFactory;
+import io.confluent.ksql.function.MutableFunctionRegistry;
 import io.confluent.ksql.util.KsqlException;
 import io.confluent.ksql.util.KsqlReferentialIntegrityException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -30,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.concurrent.ThreadSafe;
-import org.apache.kafka.connect.data.Schema;
 
 @ThreadSafe
 public final class MetaStoreImpl implements MutableMetaStore {
@@ -38,21 +33,26 @@ public final class MetaStoreImpl implements MutableMetaStore {
   private final Map<String, KsqlTopic> topics = new ConcurrentHashMap<>();
   private final Map<String, SourceInfo> dataSources = new ConcurrentHashMap<>();
   private final Object referentialIntegrityLock = new Object();
-  public final FunctionRegistry functionRegistry;
+  public final MutableFunctionRegistry functionRegistry;
 
-  public MetaStoreImpl(final FunctionRegistry functionRegistry) {
+  public MetaStoreImpl(final MutableFunctionRegistry functionRegistry) {
     this.functionRegistry = Objects.requireNonNull(functionRegistry, "functionRegistry");
   }
 
   private MetaStoreImpl(
       final Map<String, KsqlTopic> topics,
       final Map<String, SourceInfo> dataSources,
-      final FunctionRegistry functionRegistry
+      final MutableFunctionRegistry functionRegistry
   ) {
     this.topics.putAll(topics);
     this.functionRegistry = Objects.requireNonNull(functionRegistry, "functionRegistry");
 
     dataSources.forEach((name, info) -> this.dataSources.put(name, info.copy()));
+  }
+
+  @Override
+  public MutableFunctionRegistry getFunctionRegistry() {
+    return functionRegistry;
   }
 
   @Override
@@ -212,35 +212,6 @@ public final class MetaStoreImpl implements MutableMetaStore {
     synchronized (referentialIntegrityLock) {
       return new MetaStoreImpl(topics, dataSources, functionRegistry);
     }
-  }
-
-  @Override
-  public UdfFactory getUdfFactory(final String functionName) {
-    return functionRegistry.getUdfFactory(functionName);
-  }
-
-  public boolean isAggregate(final String functionName) {
-    return functionRegistry.isAggregate(functionName);
-  }
-
-  public KsqlAggregateFunction getAggregate(final String functionName,
-                                            final Schema argumentType) {
-    return functionRegistry.getAggregate(functionName, argumentType);
-  }
-
-  @Override
-  public List<UdfFactory> listFunctions() {
-    return functionRegistry.listFunctions();
-  }
-
-  @Override
-  public AggregateFunctionFactory getAggregateFactory(final String functionName) {
-    return functionRegistry.getAggregateFactory(functionName);
-  }
-
-  @Override
-  public List<AggregateFunctionFactory> listAggregateFunctions() {
-    return functionRegistry.listAggregateFunctions();
   }
 
   private Stream<SourceInfo> streamSources(final Set<String> sourceNames) {

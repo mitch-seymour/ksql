@@ -16,7 +16,11 @@ package io.confluent.ksql.metastore;
 
 import java.util.Set;
 
+import io.confluent.ksql.function.MutableFunctionRegistry;
+
 public interface MutableMetaStore extends MetaStore {
+
+  MutableFunctionRegistry getFunctionRegistry();
 
   void putTopic(KsqlTopic topic);
 

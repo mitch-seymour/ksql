@@ -39,9 +39,9 @@ public final class LogicalPlanBuilderTestUtil {
     analyzer.process(statement.getStatement(), new AnalysisContext(null));
     final AggregateAnalysis aggregateAnalysis = new AggregateAnalysis();
     final AggregateAnalyzer aggregateAnalyzer = new AggregateAnalyzer(aggregateAnalysis, analysis,
-        metaStore);
+        metaStore.getFunctionRegistry());
     final AggregateExpressionRewriter aggregateExpressionRewriter =
-        new AggregateExpressionRewriter(metaStore);
+        new AggregateExpressionRewriter(metaStore.getFunctionRegistry());
     for (final Expression expression : analysis.getSelectExpressions()) {
       aggregateAnalyzer.process(expression, new AnalysisContext(null));
       if (!aggregateAnalyzer.isHasAggregateFunction()) {
@@ -52,6 +52,6 @@ public final class LogicalPlanBuilderTestUtil {
       aggregateAnalyzer.setHasAggregateFunction(false);
     }
     // Build a logical plan
-    return new LogicalPlanner(analysis, aggregateAnalysis, metaStore).buildPlan();
+    return new LogicalPlanner(analysis, aggregateAnalysis, metaStore.getFunctionRegistry()).buildPlan();
   }
 }

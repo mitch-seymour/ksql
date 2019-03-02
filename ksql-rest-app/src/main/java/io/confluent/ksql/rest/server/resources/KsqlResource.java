@@ -410,7 +410,7 @@ public class KsqlResource {
   }
 
   private KsqlEntity listFunctions(final PreparedStatement<ListFunctions> statement) {
-    final FunctionRegistry functionRegistry = ksqlEngine.getMetaStore();
+    final FunctionRegistry functionRegistry = ksqlEngine.getFunctionRegistry();
 
     final List<SimpleFunctionInfo> all = functionRegistry.listFunctions().stream()
         .filter(factory -> !factory.isInternal())
@@ -560,7 +560,7 @@ public class KsqlResource {
   private FunctionDescriptionList describeFunction(final PreparedStatement<DescribeFunction> stmt) {
     final String functionName = stmt.getStatement().getFunctionName();
 
-    if (ksqlEngine.getMetaStore().isAggregate(functionName)) {
+    if (ksqlEngine.getFunctionRegistry().isAggregate(functionName)) {
       return describeAggregateFunction(functionName, stmt.getStatementText());
     }
 
@@ -572,7 +572,7 @@ public class KsqlResource {
       final String statementText
   ) {
     final AggregateFunctionFactory aggregateFactory
-        = ksqlEngine.getMetaStore().getAggregateFactory(functionName);
+        = ksqlEngine.getFunctionRegistry().getAggregateFactory(functionName);
 
     final ImmutableList.Builder<FunctionInfo> listBuilder = ImmutableList.builder();
 
@@ -595,7 +595,7 @@ public class KsqlResource {
       final String functionName,
       final String statementText
   ) {
-    final UdfFactory udfFactory = ksqlEngine.getMetaStore().getUdfFactory(functionName);
+    final UdfFactory udfFactory = ksqlEngine.getFunctionRegistry().getUdfFactory(functionName);
 
     final ImmutableList.Builder<FunctionInfo> listBuilder = ImmutableList.builder();
 
@@ -932,14 +932,16 @@ public class KsqlResource {
     }
 
     private void validateCreateFunction(final PreparedStatement<CreateFunction> statement) {
-      // TODO: add validation logic
+      if (!statement.getStatement().isExecutable()) {
+        throw new KsqlStatementException("Function is not executable", statement.getStatementText());
+      }
     }
 
     private void validateDescribeFunction(final PreparedStatement<DescribeFunction> statement) {
       try {
         final String functionName = statement.getStatement().getFunctionName();
 
-        final FunctionRegistry functionRegistry = executionSandbox.getMetaStore();
+        final FunctionRegistry functionRegistry = executionSandbox.getFunctionRegistry();
         if (!functionRegistry.isAggregate(functionName)) {
           // Not a known UDAF, see if know UDF. (The below throws on unknown method).
           functionRegistry.getUdfFactory(functionName);

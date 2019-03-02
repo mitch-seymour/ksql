@@ -19,13 +19,14 @@ import java.util.function.Function;
 
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.confluent.ksql.function.KsqlFunction;
 import io.confluent.ksql.function.MutableFunctionRegistry;
 import io.confluent.ksql.function.UdfFactory;
 import io.confluent.ksql.function.udf.Kudf;
 import io.confluent.ksql.function.udf.UdfMetadata;
-import io.confluent.ksql.metastore.MetaStoreImpl;
 import io.confluent.ksql.metastore.MutableMetaStore;
 import io.confluent.ksql.parser.tree.CreateFunction;
 import io.confluent.ksql.util.KsqlConfig;
@@ -34,19 +35,15 @@ import io.confluent.ksql.util.SchemaUtil;
 import scala.language;
 
 public class CreateFunctionCommand implements DdlCommand {
+
+  private static final Logger LOG = LoggerFactory.getLogger(CreateFunctionCommand.class);
+
   private final CreateFunction createFunction;
 
   CreateFunctionCommand(
       final String sqlExpression,
       final CreateFunction createFunction
   ) {
-
-    if (!createFunction.isExecutable()) {
-      // TODO: improve the error text here
-      throw new KsqlException(
-          "Function is not executable"
-      );
-    }
 
     this.createFunction = createFunction;
   }
@@ -88,8 +85,7 @@ public class CreateFunctionCommand implements DdlCommand {
         try {
           value = function.execute(args).as(returnType);
         } catch (Exception e) {
-          // TODO: handle this properly
-          System.out.println("Error executing function: " + toString() + ", " + e.getMessage());
+          LOG.warn("Exception encountered while executing function. Setting value to null", e);
           value = null;
         }
         return value;
@@ -99,65 +95,59 @@ public class CreateFunctionCommand implements DdlCommand {
     return CustomKudf.class;
   }
 
+  Function<KsqlConfig, Kudf> getUdfFactory(Class<? extends Kudf> kudfClass) {
+    return ksqlConfig -> {
+      try {
+        Constructor<? extends Kudf> constructor =
+            kudfClass.getConstructor(CreateFunction.class);
+        return constructor.newInstance(createFunction);
+      } catch (Exception e) {
+        throw new KsqlException("Failed to create instance of kudfClass "
+        + kudfClass + " for function " + createFunction.getName(), e);
+      }
+    };
+  }
+
   @Override
   public DdlCommandResult run(final MutableMetaStore metaStore) {
+    try {
+      final MutableFunctionRegistry functionRegistry = metaStore.getFunctionRegistry();
 
-    // this is ugly af. just poc'ing
-    if (metaStore instanceof MetaStoreImpl) {
-      final MetaStoreImpl m = (MetaStoreImpl) metaStore;
-      if (m.functionRegistry instanceof MutableFunctionRegistry) {
-        final MutableFunctionRegistry f = (MutableFunctionRegistry) m.functionRegistry;
+      final Class<? extends Kudf> kudfClass = getKudf();
+      final Function<KsqlConfig, Kudf> udfFactory = getUdfFactory(kudfClass);
 
-        // create an custom Kudf class that implements the script
-        // note: anonymous classes don't work here because they lack a constructor,
-        // and the codegen throws a missing <init> method
-        Class<? extends Kudf> kudfClass = getKudf();
+      KsqlFunction ksqlFunction = KsqlFunction.create(
+              createFunction.getReturnType(),
+              createFunction.getArguments(),
+              createFunction.getName(),
+              kudfClass,
+              udfFactory,
+              createFunction.getDescription(),
+              KsqlFunction.INTERNAL_PATH);
 
-        final Function<KsqlConfig, Kudf> udfFactory = ksqlConfig -> {
-          try {
-            Constructor<? extends Kudf> constructor = 
-                kudfClass.getConstructor(CreateFunction.class);
-            return constructor.newInstance(createFunction);
-          } catch (Exception e) {
-            throw new KsqlException("Failed to create instance of kudfClass "
-            + kudfClass + " for function " + createFunction.getName(), e);
-          }
-        };
+      final UdfMetadata metadata = new UdfMetadata(
+              createFunction.getName(),
+              createFunction.getOverview(),
+              createFunction.getAuthor(),
+              createFunction.getVersion(),
+              KsqlFunction.INTERNAL_PATH,
+              false);
 
-        KsqlFunction ksqlFunction = KsqlFunction.create(
-            createFunction.getReturnType(),
-            createFunction.getArguments(),
-            createFunction.getName(),
-            kudfClass,
-            udfFactory,
-            createFunction.getDescription(),
-            KsqlFunction.INTERNAL_PATH);
-        
-        final UdfMetadata metadata = new UdfMetadata(
-            createFunction.getName(),
-            createFunction.getOverview(),
-            createFunction.getAuthor(),
-            createFunction.getVersion(),
-            KsqlFunction.INTERNAL_PATH,
-            true);
+      functionRegistry.ensureFunctionFactory(new UdfFactory(ksqlFunction.getKudfClass(), metadata));
 
-        try {
-          f.ensureFunctionFactory(new UdfFactory(ksqlFunction.getKudfClass(), metadata));
-          if (createFunction.shouldReplace()) {
-            f.addOrReplaceFunction(ksqlFunction);
-          } else {
-            f.addFunction(ksqlFunction);
-          }
-        } catch (KsqlException e) {
-          final String errorMessage =
-                  String.format("Cannot create function '%s': %s",
-                      createFunction.getName(), e.getMessage());
-          throw new KsqlException(errorMessage, e);
-        }
+      if (createFunction.shouldReplace()) {
+        functionRegistry.addOrReplaceFunction(ksqlFunction);
+      } else {
+        functionRegistry.addFunction(ksqlFunction);
       }
+
       return new DdlCommandResult(true, "Function created");
+
+    } catch (Exception e) {
+      final String errorMessage =
+            String.format("Cannot create function '%s': %s",
+                createFunction.getName(), e.getMessage());
+      throw new KsqlException(errorMessage, e);
     }
-    // TODO: make this more informative
-    return new DdlCommandResult(true, "Could not create function");
   }
 }

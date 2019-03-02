@@ -111,7 +111,7 @@ class QueryEngine {
         ksqlConfig.cloneWithPropertyOverwrite(overriddenProperties),
         serviceContext,
         processingLogContext,
-        metaStore,
+        metaStore.getFunctionRegistry(),
         overriddenProperties,
         metaStore,
         queryIdGenerator,
@@ -157,6 +157,6 @@ class QueryEngine {
     final Analysis analysis = queryAnalyzer.analyze(sqlExpression, query);
     final AggregateAnalysis aggAnalysis = queryAnalyzer.analyzeAggregate(query, analysis);
 
-    return new LogicalPlanner(analysis, aggAnalysis, metaStore).buildPlan();
+    return new LogicalPlanner(analysis, aggAnalysis, metaStore.getFunctionRegistry()).buildPlan();
   }
 }
