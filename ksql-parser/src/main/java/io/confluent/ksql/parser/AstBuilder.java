@@ -277,7 +277,6 @@ public class AstBuilder extends SqlBaseBaseVisitor<Node> {
   public Node visitCreateFunction(final SqlBaseParser.CreateFunctionContext context) {
     final String language = getIdentifierText(context.languageName().identifier());
     final String script = context.udfScript().getText().replaceAll("\\$\\$", "").trim();
-    System.out.println("Replace ? " + context.REPLACE() != null);
     return new CreateFunction(
         Optional.of(getLocation(context)),
         getQualifiedName(context.qualifiedName()),

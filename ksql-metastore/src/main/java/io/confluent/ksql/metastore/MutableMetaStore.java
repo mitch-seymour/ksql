@@ -14,9 +14,9 @@
 
 package io.confluent.ksql.metastore;
 
-import java.util.Set;
-
 import io.confluent.ksql.function.MutableFunctionRegistry;
+
+import java.util.Set;
 
 public interface MutableMetaStore extends MetaStore {
 

@@ -14,14 +14,6 @@
 
 package io.confluent.ksql.ddl.commands;
 
-import java.lang.reflect.Constructor;
-import java.util.function.Function;
-
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Value;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.confluent.ksql.function.KsqlFunction;
 import io.confluent.ksql.function.MutableFunctionRegistry;
 import io.confluent.ksql.function.UdfFactory;
@@ -32,6 +24,15 @@ import io.confluent.ksql.parser.tree.CreateFunction;
 import io.confluent.ksql.util.KsqlConfig;
 import io.confluent.ksql.util.KsqlException;
 import io.confluent.ksql.util.SchemaUtil;
+
+import java.lang.reflect.Constructor;
+import java.util.function.Function;
+
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import scala.language;
 
 public class CreateFunctionCommand implements DdlCommand {
@@ -64,7 +65,7 @@ public class CreateFunctionCommand implements DdlCommand {
       private final String name;
       private final Class returnType;
 
-      public CustomKudf(CreateFunction cf) {
+      CustomKudf(final CreateFunction cf) {
         this.language = cf.getLanguage();
         this.name = cf.getName();
         this.context = Context.create(language);
@@ -94,10 +95,10 @@ public class CreateFunctionCommand implements DdlCommand {
     return CustomKudf.class;
   }
 
-  Function<KsqlConfig, Kudf> getUdfFactory(Class<? extends Kudf> kudfClass) {
+  Function<KsqlConfig, Kudf> getUdfFactory(final Class<? extends Kudf> kudfClass) {
     return ksqlConfig -> {
       try {
-        Constructor<? extends Kudf> constructor =
+        final Constructor<? extends Kudf> constructor =
             kudfClass.getConstructor(CreateFunction.class);
         return constructor.newInstance(createFunction);
       } catch (Exception e) {
@@ -115,7 +116,7 @@ public class CreateFunctionCommand implements DdlCommand {
       final Class<? extends Kudf> kudfClass = getKudf();
       final Function<KsqlConfig, Kudf> udfFactory = getUdfFactory(kudfClass);
 
-      KsqlFunction ksqlFunction = KsqlFunction.create(
+      final KsqlFunction ksqlFunction = KsqlFunction.create(
               createFunction.getReturnType(),
               createFunction.getArguments(),
               createFunction.getName(),

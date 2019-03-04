@@ -16,19 +16,18 @@ package io.confluent.ksql.parser.tree;
 
 import static java.util.Objects.requireNonNull;
 
-import java.util.ArrayList;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-
 import io.confluent.ksql.util.TypeUtil;
-import org.apache.kafka.connect.data.Schema;
-import org.graalvm.polyglot.Context;
-import org.graalvm.polyglot.Value;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
+import org.apache.kafka.connect.data.Schema;
+import org.graalvm.polyglot.Context;
 
 public class CreateFunction
     extends Statement implements ExecutableDdlStatement {
@@ -40,12 +39,15 @@ public class CreateFunction
   private final Map<String, Expression> properties;
   private final Boolean replace;
 
-  // TODO: should this live somewhere else?
-  private final class Config {
+  private static final class Config {
     public static final String AUTHOR_PROPERTY = "AUTHOR";
     public static final String DESCRIPTION_PROPERTY = "DESCRIPTION";
     public static final String OVERVIEW_PROPERTY = "OVERVIEW";
     public static final String VERSION_PROPERTY = "VERSION";
+
+    private Config() {
+      // this utility class should not be instantiated
+    }
   }
 
   public CreateFunction(
@@ -80,20 +82,18 @@ public class CreateFunction
 
   public boolean isExecutable() {
     try (Context context = Context.create(getLanguage())) {
-      Value function = context.eval(getLanguage(), getScript());
-      return function.canExecute();
+      return context.eval(getLanguage(), getScript()).canExecute();
     } catch (Exception e) {
       // TODO: make sure the exception bubbles up somewhere
       return false;
     }
   }
 
-  public String formatLanguage(String lang) {
-    lang = lang.toLowerCase().trim();
-    if (lang.equals("javascript")) {
-      lang = "js";
+  public String formatLanguage(final String lang) {
+    if (lang.equalsIgnoreCase("javascript")) {
+      return "js";
     }
-    return lang;
+    return lang.toLowerCase().trim();
   }
 
   public String getAuthor() {
@@ -129,7 +129,7 @@ public class CreateFunction
   }
 
   public List<Schema> getArguments() {
-    List<Schema> arguments = new ArrayList<>();
+    final List<Schema> arguments = new ArrayList<>();
     for (TableElement element : elements) {
       arguments.add(TypeUtil.getTypeSchema(element.getType()));
     }
