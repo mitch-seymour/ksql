@@ -84,11 +84,9 @@ public class CommandFactories implements DdlCommandFactory {
   }
 
   private CreateFunctionCommand handleCreateFunction(
-      final CallInfo callInfo,
       final CreateFunction statement
   ) {
     return new CreateFunctionCommand(
-        callInfo.sqlExpression,
         statement);
   }
 

@@ -41,7 +41,6 @@ public class CreateFunctionCommand implements DdlCommand {
   private final CreateFunction createFunction;
 
   CreateFunctionCommand(
-      final String sqlExpression,
       final CreateFunction createFunction
   ) {
 
