@@ -58,7 +58,7 @@ public class CreateFunctionCommand implements DdlCommand {
    * A method for retrieving a custom Kudf class. This class gets instantiated
    * everytime a query is created with the custom function.
    */
-  public static Class<? extends Kudf> getKudf() {
+  static Class<? extends Kudf> getKudf() {
     class CustomKudf implements Kudf {
       private final Context context;
       private final Value function;
@@ -66,7 +66,7 @@ public class CreateFunctionCommand implements DdlCommand {
       private final String name;
       private final Class returnType;
 
-      CustomKudf(final CreateFunction cf) {
+      public CustomKudf(final CreateFunction cf) {
         this.language = cf.getLanguage();
         this.name = cf.getName();
         this.context = Context.create(language);
