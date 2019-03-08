@@ -23,14 +23,16 @@ _Example: "Rebalancing enables elasticity and fault-tolerance of Streams applica
 
 KSQL allows developers to leverage the power of Kafka Streams without knowing Java. However, non-Java developers who use KSQL may quickly find themselves locked out of one of the most powerful features of KSQL: the ability to write custom functions for processing data.
 
-We therefore find ourselves in this peculiar situation. We initially lower the barrier entry into the streaming processing space by removing the Java prequisite, only to reintroduce the requirement in what is surely one of the most attractive features of KSQL.
+We therefore find ourselves in a peculiar situation. We initially lower the barrier entry into the streaming processing space by removing the Java prequisite, only to reintroduce the requirement later.
+
+Furthermore, even Java developers may find the process of writing a simple UDF, e.g. `MULTIPLY`, a little tedious. Java-based UDFs require some level of ceremony to build and deploy. A project structure must be defined, a build system employed, and KSQL itself must be restarted to pick up the new JAR. This seems overkill for some use cases, especially when the UDF logic can be expressed in a small number of lines of code.
 
 By allowing UDFs to be written in multiple languages, we can:
 
-- unlock this feature for non-Java developers
-- increase UDF-related feature adoption
+- unlock this feature for non-Java developers, which will likely increase UDF-related feature adoption
+- write less code for implementing simple, custom functions
+- enable hot-reloading of UDF logic since a scripted, non-Java UDF doesn't need to be on the classpath when the server is started
 
-Furthermore, even Java developers may find the process of writing a simple UDF, e.g. `MULTIPLY`, a little tedious. Java-based UDFs require some level of ceremony to build and deploy. A project structure must be defined, a build system employed, and KSQL itself must be restarted to pick up the new JAR. Instead, if we allow multilingual UDFs to be defined as inline scripts, we can save the ceremony for truly complex UDFs that warrant the extra effort.
 
 ## What is in scope
 
@@ -42,12 +44,13 @@ Furthermore, even Java developers may find the process of writing a simple UDF, 
 - UDAFs
 - Non-Java UDFs that cannot be expressed as an inline function (e.g. a larger program that would need to be loaded from disk)
 
-The above items are too complicated for the initial implementation of this feature. We should start simple and build a solid foundation with inline, multilingual UDFs before attempting more complicated variations of this work.
+The above items are too complicated for the initial implementation of this feature. We should start simple and build a solid foundation with the current proposal before attempting more complicated variations of this work.
 
 ## Value/Return
 
 - Unlock UDFs for non-Java developers
 - Rapid prototyping via hot-reloading scripted UDFs
+- Write less code
 
 ## Public APIS
 
@@ -121,29 +124,28 @@ Furthermore, a `dropInlineFunction` method will beed to be added to the [Mutable
 
 ## Test plan
 
-_What tests do you plan to write?  What are the failure scenarios that we do / do not cover? It goes without saying that most classes should have unit tests. This section is more focussed on the integration and system tests that you need to write to test the changes you are making._
+Tests will cover the following:
+
+- Query parsing / translation
+- New methods added to the internal function registry for updating / dropping scripted UDFs via `CREATE OR REPLACE FUNCTION` and `DROP FUNCTION` queries
+- Any other changes that are made to existing classes
+- Mocked failure scenarios will include scripts that aren't executable (e.g. because of syntax errors, guest language isn't installed, etc), and `ClassCastException` / `NullPointerException` when the script doesn't return the expected value
+
 
 ## Documentation Updates
+- The `Implement a Custom Function` section will need to be updated in the [KSQL Function Reference](docs/developer-guide/udf.rst) to include instructions for implementing non-Java UDFs.
 
-_What changes need to be made to the documentation? For example_
-
-* Do we need to change the KSQL quickstart(s) and/or the KSQL demo to showcase the new functionality? What are specific changes that should be made?
-* Do we need to update the syntax reference?
-* Do we need to add/update/remove examples?
-* Do we need to update the FAQs?
-* Do we need to add documentation so that users know how to configure KSQL to use the new feature? 
-* Etc.
-
-_This section should try to be as close as possible to the eventual documentation updates that need to me made, since that will force us into thinking how the feature is actually going to be used, and how users can be on-boarded onto the new feature. The upside is that the documentation will be ready to go before any work even begins, so only the fun part is left._
+- The [Syntax Reference](docs/developer-guide/syntax-reference.rst) will need to be updated to include the new commands:
+    - `CREATE OR REPLACE FUNCTION ...`
+    - `DROP FUNCTION`
 
 # Compatibility implications
 
-_Will the proposed changes break existing queries or work flows?_
-
-_Are we deprecating existing APIs with these changes? If so, when do we plan to remove the underlying code?_
-
-_If we are removing old functionality, what is the migration plan?_
+- Users running KSQL on the HotSpot VM will _not_ be impacted by the feature at all. Using the new queries will result in errors indicating that the user must run KSQL on GraalVM if they wish to implement a non-Java UDF. However, all other queries will continue to work as expected.
+- Users running KSQL on GraalVM will be able to execute the new queries. Existing queries and functionality will still be available, as well.
 
 ## Performance implications
 
-_Will the proposed changes affect performance, (either positively or negatively)._
+The code changes themselves do not have any performance implications. However, running KSQL on top of GraalVM may offer some performance advantages as mentioned [here][graalvm-perf].
+
+[graalvm-perf]: https://www.graalvm.org/docs/why-graal/#for-java-programs
