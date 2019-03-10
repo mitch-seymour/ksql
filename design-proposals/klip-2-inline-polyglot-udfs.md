@@ -1,4 +1,4 @@
-# KLIP 2 - Support polyglot UDFs
+# KLIP 2 - Support inline, polyglot UDFs
 
 **Author**: [Mitch Seymour][mitch-seymour]
 
