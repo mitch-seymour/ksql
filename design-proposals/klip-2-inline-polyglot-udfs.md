@@ -13,14 +13,7 @@
 
 ## tl;dr
 
-Allowing users to write UDFs in languages other than Java will provide the following benefits:
-
-- Unlock UDFs for non-Java developers, which will likely increase UDF-related feature adoption
-- Write less code for implementing simple, custom functions.
-    - Java-based UDFs generally require a project structure, build process, annotation requirements, dropping a JAR in pre-defined location and restarting the KSQL server.
-    - Inline polyglot UDFs only require the business logic of the function itself
-- Enable hot-reloading of UDF logic since scripted, non-Java UDFs don't need to be on the classpath when the server is started
-- Enable rapid prototyping of data transformation logic
+More users will be able to build UDFs, using using less code in many cases, using a deployment model that doesn't require restarting a running KSQL server. See the [Value/Return](valuereturn) section for more details.
 
 ## Motivation and background
 
@@ -43,7 +36,14 @@ The above items are too complicated for the initial implementation of this featu
 
 ## Value/Return
 
-More users will be able to build UDFs, using less code in many cases, using a deployment model that doesn't require restarting a running KSQL server.
+Allowing users to write UDFs in languages other than Java will provide the following benefits:
+
+- Unlock UDFs for non-Java developers, which will likely increase UDF-related feature adoption
+- Write less code for implementing simple, custom functions.
+    - Java-based UDFs generally require a project structure, build process, annotation requirements, dropping a JAR in pre-defined location and restarting the KSQL server.
+    - Inline polyglot UDFs only require the business logic of the function itself
+- Enable hot-reloading of UDF logic since scripted, non-Java UDFs don't need to be on the classpath when the server is started
+- Enable rapid prototyping of data transformation logic
 
 ## Public APIS
 
