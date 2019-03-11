@@ -109,7 +109,7 @@ DROP FUNCTION qualifiedName
 If a user tries to drop an internal or Java-based UDF, they will receive an error.
 
 ### Configurations
-- A new configuration to enable experimental features. This reason this should be considered experimental is because our solution relies on GraalVM (see Design(#Design)), which is awaiting a 1.0 release (release candidate versions are available and have worked well in [prototypes of polyglot UDFs in KSQL][prototypes]).
+- A new configuration to enable experimental features. This reason this should be considered experimental is because our solution relies on GraalVM (see [Design](#design)), which is awaiting a 1.0 release (release candidate versions are available and have worked well in [prototypes of polyglot UDFs in KSQL][prototypes]).
 
 [prototypes]: https://github.com/magicalpipelines/docker-ksql-multilingual-udfs-poc
 
