@@ -49,7 +49,7 @@ The above query would automatically update the internal function registry as nee
 
 - Extending the KSQL language to support inline, polyglot UDFs
 - Hot-reloading of a non-Java UDF that is created via the new `CREATE OR REPLACE` query
-- A new boolean KSQL configuration parameter: `experimental.features.enabled`. Defaults to `false`
+- A new boolean KSQL configuration parameter: `ksql.experimental.features.enabled`. Defaults to `false`
 
 ## What is not in scope
 
@@ -196,13 +196,71 @@ Tests will cover the following:
 
 
 ## Documentation Updates
-- The `Implement a Custom Function` section will need to be updated in the [KSQL Function Reference](/docs/developer-guide/udf.rst) to include instructions for implementing non-Java UDFs.
+- The `Implement a Custom Function` section will need to be updated in the [KSQL Function Reference](/docs/developer-guide/udf.rst) to include instructions for implementing non-Java UDFs. e.g.
 
 - The [Syntax Reference](/docs/developer-guide/syntax-reference.rst) will need to be updated to include the new commands:
-    - `CREATE OR REPLACE FUNCTION ...`
-    - `DROP FUNCTION`
 
-- The [KSQL Configuration Parameter Reference](/docs/installation/server-config/config-reference.rst) will need to be updated to include the new configuration parameter: `experimental.features.enabled`
+> CREATE FUNCTION
+> ---------------
+> 
+> **Synopsis**
+> 
+> ```sql
+> CREATE (OR REPLACE?) FUNCTION function_name ( { field_name data_type } [, ...] )
+>   RETURNS data_type
+>   LANGUAGE language_name
+>   AS $$
+>     inline_script
+>   $$
+>   WITH ( property_name = expression [, ...] );
+> ```
+> 
+> **Description**
+> 
+> Create a new function with the specified arguments and properties. Note: this is an experimental feature, and the following requirements must be met:
+> 
+> - `ksql.experimental.features.enabled` is set to `true`
+> - You are running KSQL on GraalVM
+> - If language you specify in the `CREATE FUNCTION` query isn't bundled in GraalVM, you must install the appropriate component using the [Graal Updater][graal-updated] (`gu`).
+> - The function must be executable. In other words, your function should be defined as a lambda / anonymous function in the language you choose.
+> 
+> [graal-updater]: https://www.graalvm.org/docs/reference-manual/graal-updater/#component-installation
+> 
+> The supported field data types are:
+> 
+> -  ``BOOLEAN``
+> -  ``INTEGER``
+> -  ``BIGINT``
+> -  ``DOUBLE``
+> -  ``VARCHAR`` (or ``STRING``)
+> 
+> The WITH clause supports the following properties:
+> 
+> | Property                | Description                                                                                |
+> |-------------------------|--------------------------------------------------------------------------------------------|
+> | AUTHOR                  | The author of the function                                                                 |
+> | DESCRIPTION             | A description of the function                                                              |
+> | VERSION                 | The version (e.g. `0.1.0`) of the function                                                 |
+> 
+> Example:
+> 
+> ```sql
+> 
+> CREATE OR REPLACE FUNCTION MULTIPLY(x INT, y INT)
+>   RETURNS INT
+>   LANGUAGE PYTHON AS $$
+>     lambda x, y: x * y
+>   $$
+>   WITH (author='Your name', description='multiply two numbers', version='0.1.0');
+> ```
+  
+- The [KSQL Configuration Parameter Reference](/docs/installation/server-config/config-reference.rst) will need to be updated to include the new configuration parameter: `ksql.experimental.features.enabled`
+
+   > ----------------------------------
+   > ksql.experimental.features.enabled
+   > ----------------------------------
+   > Indicates whether or not experimental features are enabled. Defaults to `false`. Setting this to `true` will enable the following experimental features:
+   > - Polyglot UDFs
 
 # Compatibility implications
 
