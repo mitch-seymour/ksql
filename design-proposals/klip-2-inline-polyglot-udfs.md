@@ -13,7 +13,7 @@
 
 ## tl;dr
 
-More users will be able to build UDFs, using using less code in many cases, using a deployment model that doesn't require restarting a running KSQL server. See the [Value/Return](valuereturn) section for more details.
+More users will be able to build UDFs, using using less code in many cases, using a deployment model that doesn't require restarting a running KSQL server. See the [Value/Return](#valuereturn) section for more details.
 
 ## Motivation and background
 
@@ -152,13 +152,13 @@ Tests will cover the following:
 
 
 ## Documentation Updates
-- The `Implement a Custom Function` section will need to be updated in the [KSQL Function Reference](docs/developer-guide/udf.rst) to include instructions for implementing non-Java UDFs.
+- The `Implement a Custom Function` section will need to be updated in the [KSQL Function Reference](/docs/developer-guide/udf.rst) to include instructions for implementing non-Java UDFs.
 
-- The [Syntax Reference](docs/developer-guide/syntax-reference.rst) will need to be updated to include the new commands:
+- The [Syntax Reference](/docs/developer-guide/syntax-reference.rst) will need to be updated to include the new commands:
     - `CREATE OR REPLACE FUNCTION ...`
     - `DROP FUNCTION`
 
-- The [KSQL Configuration Parameter Reference](docs/installation/server-config/config-reference.rst) will need to be updated to include the new configuration parameter: `experimental.features.enabled`
+- The [KSQL Configuration Parameter Reference](/docs/installation/server-config/config-reference.rst) will need to be updated to include the new configuration parameter: `experimental.features.enabled`
 
 # Compatibility implications
 
