@@ -133,7 +133,7 @@ R                        1.0.0-rc12          FastR
 ruby                     1.0.0-rc12          TruffleRuby
 ```
 
-__Note:__ Javascript is also included in the GraalVM installation, and does not need to be installed using `gu`.
+__Note:__ JavaScript is also included in the GraalVM installation, and does not need to be installed using `gu`.
 
 
 Regardless of which VM users run KSQL on, the GraalVM SDK will be added as a dependency to the `ksql-engine` and `ksql-parser` subprojects. When a user invokes the `CREATE OR REPLACE FUNCTION` query, the SDK will be used to create a [polyglot context][pg] that will determine whether or not the provided function is executable. For example, if a user were to invoke the following query while running KSQL on the HotSpot VM:
