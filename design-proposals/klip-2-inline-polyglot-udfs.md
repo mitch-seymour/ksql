@@ -48,7 +48,7 @@ The above query would automatically update the internal function registry as nee
 ## What is in scope
 
 - Extending the KSQL language to support inline, polyglot UDFs
-- Hot-reloading of non-Java UDFs via `CREATE OR REPLACE` queries
+- Hot-reloading of a non-Java UDF that is created via the new `CREATE OR REPLACE` query
 - A new boolean KSQL configuration parameter: `experimental.features.enabled`. Defaults to `false`
 
 ## What is not in scope
