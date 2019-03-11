@@ -43,7 +43,7 @@ $$
 WITH (author='Mitch Seymour', description='multiply two numbers', version='0.1.0');
 ```
 
-The above query would automatically update the internal function registry as needed so that we can avoid restarting any KSQL servers to pick up the new UDF. It also requires a lot less code than the Java equivalent. Less code, combined with a quicker deployment model, means a better development experience when creating UDFs.
+The above query would automatically update the internal function registry as needed so that we can avoid restarting any KSQL servers to pick up the new UDF. It also requires a lot less code than the Java equivalent. Less code, combined with a quicker deployment model, means a better development experience for UDF creators.
 
 ## What is in scope
 
