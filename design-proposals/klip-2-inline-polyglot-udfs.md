@@ -36,7 +36,7 @@ For simple UDFs, it would be much easier if we could forgo most of the steps abo
 
 ```sql
 CREATE OR REPLACE FUNCTION MULTIPLY(x INT, y INT) 
-RETURNS VARCHAR
+RETURNS INT
 LANGUAGE JAVASCRIPT AS $$
 (x, y) =>x * y
 $$ 
