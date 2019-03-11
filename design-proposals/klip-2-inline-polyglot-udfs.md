@@ -22,7 +22,8 @@ KSQL allows developers to leverage the power of Kafka Streams without knowing Ja
 Furthermore, even Java developers may find the process of writing a simple UDF a little tedious. Java-based UDFs require some level of ceremony to build and deploy. To illustrate this point, consider the following example. Let's create a UDF, `MULTIPLY`, that multiplies 2 numbers.
 
 __Current approach:__
-- Write a Java class implements the business logic of our UDF (multiply two numbers)
+
+- Write a Java class that implements the business logic of our UDF (multiply two numbers)
 - Add the `@UdfDescription` and `@Udf` annotations to our class
 - Create a build file (e.g. `pom.xml` or `build.gradle`) for building our project
 - Package the artifact into an uber JAR
@@ -30,6 +31,7 @@ __Current approach:__
 - Restart KSQL server instances to pick up the new UDF
 
 __New approach:__
+
 For simple UDFs, it would be much easier if we could forgo most of the steps above, and just worry about the business logic of our function. For example, using a new `CREATE OR REPLACE` query, we could create the `MULTIPLY` UDF as follows:
 
 ```sql
