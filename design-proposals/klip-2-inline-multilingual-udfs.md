@@ -66,7 +66,7 @@ Allowing users to write UDFs in languages other than Java will provide the follo
 - Write less code for implementing simple, custom functions.
     - Java-based UDFs generally require a project structure, build process, annotation requirements, dropping a JAR in pre-defined location and restarting the KSQL server.
     - Inline polyglot UDFs only require the business logic of the function itself
-- Enable hot-reloading of UDF logic since scripted, non-Java UDFs don't need to be on the classpath when the server is started
+- A streamlined deployment process for non-Java UDFs with support for hot-reloading (instead of requiring users to restart KSQL server instances)
 - Enable rapid prototyping of data transformation logic
 
 ## Public APIS
