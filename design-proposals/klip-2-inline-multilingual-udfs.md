@@ -38,12 +38,12 @@ For simple UDFs, it would be much easier if we could forgo most of the steps abo
 CREATE OR REPLACE FUNCTION MULTIPLY(x INT, y INT) 
 RETURNS INT
 LANGUAGE JAVASCRIPT AS $$
-(x, y) =>x * y
+(x, y) => x * y
 $$ 
 WITH (author='Mitch Seymour', description='multiply two numbers', version='0.1.0');
 ```
 
-The above query would automatically update the internal function registry as needed so that we can avoid restarting any KSQL servers to pick up the new UDF. 
+The above query would automatically update the internal function registry as needed so that we can avoid restarting any KSQL servers to pick up the new UDF. It also requires a lot less code than the Java equivalent. Less code, combined with a quicker deployment model, means a better development experience when creating UDFs.
 
 ## What is in scope
 
