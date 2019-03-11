@@ -1,4 +1,4 @@
-# KLIP 2 - Support inline, polyglot UDFs
+# KLIP 2 - Support inline, multilingual UDFs
 
 **Author**: [Mitch Seymour][mitch-seymour]
 
@@ -13,7 +13,7 @@
 
 ## tl;dr
 
-Allowing UDFs to be written in a variety of guest languages (JavaScript, Python, Ruby, R) will increase UDF-related feature adoption among non-Java developers, reduce the amount of code that is needed to deploy simple UDFs (by forgoing the relatively tedious build / deployment process of Java-based UDFs), and enable rapid prototyping of new data transformation logic.
+Allowing UDFs to be written in a variety of guest languages (JavaScript, Python, Ruby) will increase UDF-related feature adoption among non-Java developers, reduce the amount of code that is needed to deploy simple UDFs (by forgoing the relatively tedious build / deployment process of Java-based UDFs), and enable rapid prototyping of new data transformation logic.
 
 ## Motivation and background
 
@@ -47,8 +47,8 @@ The above query would automatically update the internal function registry as nee
 
 ## What is in scope
 
-- Extending the KSQL language to support inline, polyglot UDFs
-- Hot-reloading of a non-Java UDF that is created via the new `CREATE OR REPLACE` query
+- Extending the KSQL language to support inline, multilingual UDFs
+- Hot-reloading of non-Java UDFs that are created via the new `CREATE OR REPLACE` query
 - A new boolean KSQL configuration parameter: `ksql.experimental.features.enabled`. Defaults to `false`
 
 ## What is not in scope
@@ -65,7 +65,7 @@ Allowing users to write UDFs in languages other than Java will provide the follo
 - Unlock UDFs for non-Java developers, which will likely increase UDF-related feature adoption
 - Write less code for implementing simple, custom functions.
     - Java-based UDFs generally require a project structure, build process, annotation requirements, dropping a JAR in pre-defined location and restarting the KSQL server.
-    - Inline polyglot UDFs only require the business logic of the function itself
+    - Inline multilingual UDFs only require the business logic of the function itself
 - A streamlined deployment process for non-Java UDFs with support for hot-reloading (instead of requiring users to restart KSQL server instances)
 - Enable rapid prototyping of data transformation logic
 
@@ -75,7 +75,7 @@ Allowing users to write UDFs in languages other than Java will provide the follo
 
 The KSQL language will be extended with the following queries:
 
-1. Query for creating inline, polyglot UDFs:
+1. Query for creating inline, multilingual UDFs:
 
 ```sql
 CREATE (OR REPLACE)? FUNCTION qualifiedName
@@ -101,7 +101,7 @@ WITH (author='Mitch Seymour', description='js udf example', version='0.1.0');
 Functions created using this new query will be discoverable via `SHOW FUNCTIONS` and can be described using the `DESCRIBE FUNCTION` query.
 
 2. Query for dropping UDFs that were created using the method above.
-                ```
+
 ```sql
 DROP FUNCTION qualifiedName
 ```
@@ -109,13 +109,13 @@ DROP FUNCTION qualifiedName
 If a user tries to drop an internal or Java-based UDF, they will receive an error.
 
 ### Configurations
-- A new configuration to enable experimental features. This reason this should be considered experimental is because our solution relies on GraalVM (see [Design](#design)), which is awaiting a 1.0 release (release candidate versions are available and have worked well in [prototypes of polyglot UDFs in KSQL][prototypes]).
+- A new configuration to enable experimental features. This reason this should be considered experimental is because our solution relies on GraalVM (see [Design](#design)), which is awaiting a 1.0 release (release candidate versions are available and have worked well in [prototypes of multilingual UDFs in KSQL][prototypes]).
 
 [prototypes]: https://github.com/magicalpipelines/docker-ksql-multilingual-udfs-poc
 
 ## Design
 
-[GraalVM Community Edition][gce] is a virtual machine that supports polyglot programming. It is a drop-in replacement for Java 8 and soon to be Java 11. Users who would like to write UDFs in languages other than Java will be expected to run KSQL on GraalVM (instead of the HotSpot VM). Users will also have control over which languages they can use in polyglot UDFs by installing the appropriate components using the [Graal updater][gu], which is included in the GraalVM installation. For example. to install `python`, one could simply run:
+[GraalVM Community Edition][gce] is a virtual machine that supports polyglot programming. It is a drop-in replacement for Java 8 and soon to be Java 11. Users who would like to write UDFs in languages other than Java will be expected to run KSQL on GraalVM (instead of the HotSpot VM). Users will also have control over which languages they can use in multilingual UDFs by installing the appropriate components using the [Graal updater][gu], which is included in the GraalVM installation. For example. to install `python`, one could simply run:
 
 ```bash
 $ gu install python
@@ -196,7 +196,7 @@ Tests will cover the following:
 
 
 ## Documentation Updates
-- The `Implement a Custom Function` section will need to be updated in the [KSQL Function Reference](/docs/developer-guide/udf.rst) to include instructions for implementing non-Java UDFs. e.g.
+- The `Implement a Custom Function` section will need to be updated in the [KSQL Function Reference](/docs/developer-guide/udf.rst) to include instructions for implementing non-Java UDFs. Any reference to `UDFs` in the current documentation will be updated to `Java UDFs`.
 
 - The [Syntax Reference](/docs/developer-guide/syntax-reference.rst) will need to be updated to include the new commands:
 
@@ -217,7 +217,7 @@ Tests will cover the following:
 > 
 > **Description**
 > 
-> Create a new function with the specified arguments and properties. Note: this is an experimental feature, and the following requirements must be met:
+> Create a new function with the specified arguments and properties. __Note:__ this is an experimental feature, so the following requirements must be met before running a `CREATE FUNCTION` query.
 > 
 > - `ksql.experimental.features.enabled` is set to `true`
 > - You are running KSQL on GraalVM
@@ -260,7 +260,7 @@ Tests will cover the following:
    > ksql.experimental.features.enabled
    > ----------------------------------
    > Indicates whether or not experimental features are enabled. Defaults to `false`. Setting this to `true` will enable the following experimental features:
-   > - Polyglot UDFs
+   > - Multilingual UDFs
 
 # Compatibility implications
 
