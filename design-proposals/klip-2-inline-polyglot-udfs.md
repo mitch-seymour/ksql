@@ -13,13 +13,35 @@
 
 ## tl;dr
 
-More users will be able to build UDFs, using using less code in many cases, using a deployment model that doesn't require restarting a running KSQL server. See the [Value/Return](#valuereturn) section for more details.
+Allowing UDFs to be written in a variety of guest languages (JavaScript, Python, Ruby, R) will increase UDF-related feature adoption among non-Java developers, reduce the amount of code that is needed to deploy simple UDFs (by forgoing the relatively tedious build / deployment process of Java-based UDFs), and enable rapid prototyping of new data transformation logic.
 
 ## Motivation and background
 
 KSQL allows developers to leverage the power of Kafka Streams without knowing Java. However, non-Java developers who use KSQL may quickly find themselves locked out of one of the most powerful features of KSQL: the ability to write custom functions for processing data.
 
-Furthermore, even Java developers may find the process of writing a simple UDF, e.g. `MULTIPLY`, a little tedious. Java-based UDFs require some level of ceremony to build and deploy. A project structure must be defined, a build system employed, and the KSQL server itself must be restarted to pick up the new JAR. This can be tedious for some use cases, especially when the UDF logic can be expressed in just a few lines of code.
+Furthermore, even Java developers may find the process of writing a simple UDF a little tedious. Java-based UDFs require some level of ceremony to build and deploy. To illustrate this point, consider the following example. Let's create a UDF, `MULTIPLY`, that multiplies 2 numbers.
+
+__Current approach:__
+- Write a Java class implements the business logic of our UDF (multiply two numbers)
+- Add the `@UdfDescription` and `@Udf` annotations to our class
+- Create a build file (e.g. `pom.xml` or `build.gradle`) for building our project
+- Package the artifact into an uber JAR
+- Copy the uber JAR to the `ext/` directory (`ksql.extension.dir`)
+- Restart KSQL server instances to pick up the new UDF
+
+__New approach:__
+For simple UDFs, it would be much easier if we could forgo most of the steps above, and just worry about the business logic of our function. For example, using a new `CREATE OR REPLACE` query, we could create the `MULTIPLY` UDF as follows:
+
+```sql
+CREATE OR REPLACE FUNCTION MULTIPLY(x INT, y INT) 
+RETURNS VARCHAR
+LANGUAGE JAVASCRIPT AS $$
+(x, y) =>x * y
+$$ 
+WITH (author='Mitch Seymour', description='multiply two numbers', version='0.1.0');
+```
+
+The above query would automatically update the internal function registry as needed so that we can avoid restarting any KSQL servers to pick up the new UDF. 
 
 ## What is in scope
 
@@ -50,10 +72,20 @@ Allowing users to write UDFs in languages other than Java will provide the follo
 ### KSQL language
 
 The KSQL language will be extended with the following queries:
-- `CREATE OR REPLACE FUNCTION`
-- `DROP FUNCTION` (will error if the function is not an inline script)
 
-Here's a more complete example of the first query type:
+1. Query for creating inline, polyglot UDFs:
+
+```sql
+CREATE (OR REPLACE)? FUNCTION qualifiedName
+  ('(' tableElement (',' tableElement)* ')')?
+  RETURNS type
+  LANGUAGE languageName
+  AS
+  udfScript
+  (WITH functionProperties)?
+```
+
+Example:
 
 ```sql
 CREATE OR REPLACE FUNCTION STATUS_MAJOR(status_code INT) 
@@ -63,6 +95,16 @@ LANGUAGE JAVASCRIPT AS $$
 $$ 
 WITH (author='Mitch Seymour', description='js udf example', version='0.1.0');
 ```
+
+Functions created using this new query will be discoverable via `SHOW FUNCTIONS` and can be described using the `DESCRIBE FUNCTION` query.
+
+2. Query for dropping UDFs that were created using the method above.
+                ```
+```sql
+DROP FUNCTION qualifiedName
+```
+
+If a user tries to drop an internal or Java-based UDF, they will receive an error.
 
 ### Configurations
 - A new configuration to enable experimental features. This reason this should be considered experimental is because our solution relies on GraalVM (see Design(#Design)), which is awaiting a 1.0 release (release candidate versions are available and have worked well in [prototypes of polyglot UDFs in KSQL][prototypes]).
