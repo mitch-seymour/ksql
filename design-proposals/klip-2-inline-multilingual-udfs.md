@@ -38,7 +38,7 @@ __Current approach:__
 
 __New approach:__
 
-For simple UDFs, it would be much easier if we could forgo most of the steps above, and just worry about the business logic of our function. For example, using a new `CREATE OR REPLACE` query, we could create the `MULTIPLY` UDF as follows:
+As you can see above, implementing the business logic of our UDF is only the first of many steps using the current approach. For simple UDFs, it would be much easier if we could just worry about implementation details of our function, and not the build / deployment process as well. For example, using a new `CREATE OR REPLACE` query, we could create the `MULTIPLY` UDF as follows:
 
 ```sql
 CREATE OR REPLACE FUNCTION MULTIPLY(x INT, y INT) 
@@ -54,7 +54,7 @@ The above query would automatically update the internal function registry as nee
 ## What is in scope
 
 - Extending the KSQL language to support inline, multilingual UDFs
-- Hot-reloading of non-Java UDFs that are created via the new `CREATE OR REPLACE` query
+- Quick deployment process for multilingual UDFs, with support for hot-reloading of UDFs that are created via the new `CREATE OR REPLACE` query
 - A new boolean KSQL configuration parameter: `ksql.experimental.features.enabled`. Defaults to `false`
 
 ## What is not in scope
@@ -84,32 +84,33 @@ The KSQL language will be extended with the following queries:
 1. Query for creating inline, multilingual UDFs:
 
 ```sql
-CREATE (OR REPLACE)? FUNCTION qualifiedName
-  ('(' tableElement (',' tableElement)* ')')?
-  RETURNS type
-  LANGUAGE languageName
-  AS
-  udfScript
-  (WITH functionProperties)?
+CREATE (OR REPLACE?) FUNCTION function_name ( { field_name data_type } [, ...] )
+  RETURNS data_type
+  LANGUAGE language_name
+  AS $$
+    inline_script
+  $$
+  WITH ( property_name = expression [, ...] );
 ```
 
 Example:
 
 ```sql
 CREATE OR REPLACE FUNCTION STATUS_MAJOR(status_code INT) 
-RETURNS VARCHAR
-LANGUAGE JAVASCRIPT AS $$
-(code) => code.toString().charAt(0) + 'xx'
-$$ 
-WITH (author='Mitch Seymour', description='js udf example', version='0.1.0');
+  RETURNS VARCHAR
+  LANGUAGE JAVASCRIPT
+  AS $$
+    (code) => code.toString().charAt(0) + 'xx'
+  $$
+  WITH (author='Mitch Seymour', description='js udf example', version='0.1.0');
 ```
 
-Functions created using this new query will be discoverable via `SHOW FUNCTIONS` and can be described using the `DESCRIBE FUNCTION` query.
+Functions created using this new query will be discoverable via `SHOW FUNCTIONS` and can be described using the `DESCRIBE FUNCTION` query. We may want to impose a max identifier length for the function name (e.g. 60 characters).
 
 2. Query for dropping UDFs that were created using the method above.
 
 ```sql
-DROP FUNCTION qualifiedName
+DROP FUNCTION function_name
 ```
 
 If a user tries to drop an internal or Java-based UDF, they will receive an error.
@@ -146,10 +147,11 @@ Regardless of which VM users run KSQL on, the GraalVM SDK will be added as a dep
 
 ```
 CREATE OR REPLACE FUNCTION STATUS_MAJOR(status_code INT) 
-RETURNS VARCHAR
-LANGUAGE JAVASCRIPT AS $$
-(code) => code.toString().charAt(0) + 'xx'
-$$ 
+  RETURNS VARCHAR
+  LANGUAGE JAVASCRIPT
+  AS $$
+    (code) => code.toString().charAt(0) + 'xx'
+  $$ 
 ```
 
 They will receive an error along the lines of:
@@ -257,7 +259,8 @@ Tests will cover the following:
 > 
 > CREATE OR REPLACE FUNCTION MULTIPLY(x INT, y INT)
 >   RETURNS INT
->   LANGUAGE PYTHON AS $$
+>   LANGUAGE PYTHON
+    AS $$
 >     lambda x, y: x * y
 >   $$
 >   WITH (author='Your name', description='multiply two numbers', version='0.1.0');
