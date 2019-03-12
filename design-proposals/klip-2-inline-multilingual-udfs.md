@@ -23,7 +23,7 @@ Allowing UDFs to be written in languages other than Java (e.g. JavaScript, Pytho
 
 ## Motivation and background
 
-KSQL allows developers to leverage the power of Kafka Streams without knowing Java. However, non-Java developers who use KSQL may quickly find themselves locked out of one of the most powerful features of KSQL: the ability to write custom functions for processing data.
+KSQL allows developers to leverage the power of Kafka Streams without knowing Java. However, non-Java developers who use KSQL may quickly find themselves locked out of one of the most powerful features of KSQL: the ability to write custom functions for processing data. Multilingual UDFs will give these developers an opportunity to create their own UDFs using a language they may already be familiar with.
 
 Furthermore, even Java developers may find the process of writing a simple UDF a little tedious. Java-based UDFs require some level of ceremony to build and deploy. To illustrate this point, consider the following example. Let's create a UDF named `MULTIPLY` that multiplies 2 numbers.
 
