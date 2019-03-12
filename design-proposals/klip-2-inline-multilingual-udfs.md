@@ -86,24 +86,24 @@ The KSQL language will be extended with the following queries:
 
 ```sql
 CREATE (OR REPLACE?) FUNCTION function_name ( { field_name data_type } [, ...] )
-  RETURNS data_type
-  LANGUAGE language_name
-  AS $$
-    inline_script
-  $$
-  WITH ( property_name = expression [, ...] );
+RETURNS data_type
+LANGUAGE language_name
+AS $$
+  inline_script
+$$
+WITH ( property_name = expression [, ...] );
 ```
 
 Example:
 
 ```sql
 CREATE OR REPLACE FUNCTION STATUS_MAJOR(status_code INT) 
-  RETURNS VARCHAR
-  LANGUAGE JAVASCRIPT
-  AS $$
-    (code) => code.toString().charAt(0) + 'xx'
-  $$
-  WITH (author='Mitch Seymour', description='js udf example', version='0.1.0');
+RETURNS VARCHAR
+LANGUAGE JAVASCRIPT
+AS $$
+  (code) => code.toString().charAt(0) + 'xx'
+$$
+WITH (author='Mitch Seymour', description='js udf example', version='0.1.0');
 ```
 
 Functions created using this new query will be discoverable via `SHOW FUNCTIONS` and can be described using the `DESCRIBE FUNCTION` query. We may want to impose a max identifier length for the function name (e.g. 60 characters).
@@ -148,11 +148,11 @@ Regardless of which VM users run KSQL on, the GraalVM SDK will be added as a dep
 
 ```
 CREATE OR REPLACE FUNCTION STATUS_MAJOR(status_code INT) 
-  RETURNS VARCHAR
-  LANGUAGE JAVASCRIPT
-  AS $$
-    (code) => code.toString().charAt(0) + 'xx'
-  $$ 
+RETURNS VARCHAR
+LANGUAGE JAVASCRIPT
+AS $$
+  (code) => code.toString().charAt(0) + 'xx'
+$$ 
 ```
 
 They will receive an error along the lines of:
@@ -166,8 +166,9 @@ Similarly, if KSQL is running on GraalVM but the inline script is not a valid la
 ```
 CREATE OR REPLACE FUNCTION STATUS_MAJOR(status_code INT) 
 RETURNS VARCHAR
-LANGUAGE JAVASCRIPT AS $$
-"hello"
+LANGUAGE JAVASCRIPT
+AS $$
+  "hello"
 $$ 
 ```
 
@@ -216,12 +217,12 @@ Tests will cover the following:
 > 
 > ```sql
 > CREATE (OR REPLACE?) FUNCTION function_name ( { field_name data_type } [, ...] )
->   RETURNS data_type
->   LANGUAGE language_name
->   AS $$
->     inline_script
->   $$
->   WITH ( property_name = expression [, ...] );
+> RETURNS data_type
+> LANGUAGE language_name
+> AS $$
+>   inline_script
+> $$
+> WITH ( property_name = expression [, ...] );
 > ```
 > 
 > **Description**
@@ -259,12 +260,12 @@ Tests will cover the following:
 > ```sql
 > 
 > CREATE OR REPLACE FUNCTION MULTIPLY(x INT, y INT)
->   RETURNS INT
->   LANGUAGE PYTHON
-    AS $$
->     lambda x, y: x * y
->   $$
->   WITH (author='Your name', description='multiply two numbers', version='0.1.0');
+> RETURNS INT
+> LANGUAGE PYTHON
+> AS $$
+>   lambda x, y: x * y
+> $$
+> WITH (author='Your name', description='multiply two numbers', version='0.1.0');
 > ```
   
 - The [KSQL Configuration Parameter Reference](/docs/installation/server-config/config-reference.rst) will need to be updated to include the new configuration parameter: `ksql.experimental.features.enabled`
