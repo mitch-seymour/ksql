@@ -226,13 +226,16 @@ Tests will cover the following:
 > 
 > [graal-updater]: https://www.graalvm.org/docs/reference-manual/graal-updater/#component-installation
 > 
-> The supported field data types are:
+> The supported field and return data types are:
 > 
 > -  ``BOOLEAN``
 > -  ``INTEGER``
 > -  ``BIGINT``
 > -  ``DOUBLE``
 > -  ``VARCHAR`` (or ``STRING``)
+> -  ``ARRAY<ArrayType>`` (JSON and AVRO only. Index starts from 0)
+> -  ``MAP<VARCHAR, ValueType>`` (JSON and AVRO only)
+> -  ``STRUCT<FieldName FieldType, ...> (JSON and AVRO only)``
 > 
 > The WITH clause supports the following properties:
 > 
