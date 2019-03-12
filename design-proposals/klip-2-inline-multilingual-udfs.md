@@ -96,6 +96,10 @@ WITH ( property_name = expression [, ...] );
 
 Example:
 
+Here's an example UDF that coverts HTTP response codes (500, 404, [418][i_am_a_teapot]), to a status major string (`5xx`, `4xx`, etc).
+
+[i_am_a_teapot]: https://httpstatuses.com/418
+
 ```sql
 CREATE OR REPLACE FUNCTION STATUS_MAJOR(status_code INT) 
 RETURNS VARCHAR
