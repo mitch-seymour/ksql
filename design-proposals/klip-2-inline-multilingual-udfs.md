@@ -38,16 +38,16 @@ __Current approach:__
 
 __New approach:__
 
-As you can see above, implementing the business logic of our UDF is only the first of many steps using the current approach. For simple UDFs, it would be much easier if we could just worry about implementation details of our function, and not the build / deployment process as well. For example, using the new `CREATE OR REPLACE` query, we could create the `MULTIPLY` UDF as follows:
+As you can see above, implementing the business logic of our UDF is only the first of many steps using the current approach. For simple UDFs (i.e. UDFs that don't require third-party dependencies, and can be expressed in a few lines of code), it would be much easier if we could just worry about implementation details of our function, and not the build / deployment process as well. For example, using the new `CREATE OR REPLACE` query, we could create the `MULTIPLY` UDF as follows:
 
 ```sql
 CREATE OR REPLACE FUNCTION MULTIPLY(x INT, y INT) 
-  RETURNS INT
-  LANGUAGE JAVASCRIPT
-  AS $$
-    (x, y) => x * y
-  $$ 
-  WITH (author='Mitch Seymour', description='multiply two numbers', version='0.1.0');
+RETURNS INT
+LANGUAGE JAVASCRIPT
+AS $$
+  (x, y) => x * y
+$$ 
+WITH (author='Mitch Seymour', description='multiply two numbers', version='0.1.0');
 ```
 
 The above query would automatically update the internal function registry as needed so that we can avoid restarting any KSQL servers to pick up the new UDF. It also requires a lot less code than the Java equivalent. Less code, combined with a quicker deployment model, means a better development experience for UDF creators.
