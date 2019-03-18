@@ -1,8 +1,9 @@
 /*
  * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Confluent Community License; you may not use this file
- * except in compliance with the License.  You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
  * http://www.confluent.io/confluent-community-license
  *
@@ -14,14 +15,14 @@
 
 package io.confluent.ksql.planner;
 
-import io.confluent.ksql.analyzer.AggregateAnalysis;
+import io.confluent.ksql.analyzer.AggregateAnalysisResult;
 import io.confluent.ksql.analyzer.Analysis;
+import io.confluent.ksql.analyzer.Analysis.Into;
 import io.confluent.ksql.ddl.DdlConfig;
 import io.confluent.ksql.function.FunctionRegistry;
-import io.confluent.ksql.metastore.KsqlStdOut;
-import io.confluent.ksql.metastore.KsqlStream;
-import io.confluent.ksql.metastore.KsqlTable;
-import io.confluent.ksql.metastore.StructuredDataSource;
+import io.confluent.ksql.metastore.model.KsqlStream;
+import io.confluent.ksql.metastore.model.KsqlTable;
+import io.confluent.ksql.metastore.model.StructuredDataSource;
 import io.confluent.ksql.parser.tree.Expression;
 import io.confluent.ksql.planner.plan.AggregateNode;
 import io.confluent.ksql.planner.plan.FilterNode;
@@ -47,12 +48,12 @@ public class LogicalPlanner {
   // CHECKSTYLE_RULES.ON: ClassDataAbstractionCoupling
 
   private final Analysis analysis;
-  private final AggregateAnalysis aggregateAnalysis;
+  private final AggregateAnalysisResult aggregateAnalysis;
   private final FunctionRegistry functionRegistry;
 
   public LogicalPlanner(
       final Analysis analysis,
-      final AggregateAnalysis aggregateAnalysis,
+      final AggregateAnalysisResult aggregateAnalysis,
       final FunctionRegistry functionRegistry
   ) {
     this.analysis = analysis;
@@ -81,38 +82,38 @@ public class LogicalPlanner {
         currentNode);
   }
 
-  private OutputNode buildOutputNode(final Schema inputSchema,
-                                     final PlanNode sourcePlanNode) {
-    final StructuredDataSource intoDataSource = analysis.getInto();
-
+  private OutputNode buildOutputNode(
+      final Schema inputSchema,
+      final PlanNode sourcePlanNode
+  ) {
     final Map<String, Object> intoProperties = analysis.getIntoProperties();
-    final TimestampExtractionPolicy extractionPolicy = getTimestampExtractionPolicy(
-        inputSchema,
-        intoProperties);
-    if (intoDataSource instanceof KsqlStdOut) {
+    final TimestampExtractionPolicy extractionPolicy =
+        getTimestampExtractionPolicy(inputSchema, intoProperties);
+
+    if (!analysis.getInto().isPresent()) {
       return new KsqlBareOutputNode(
-          new PlanNodeId(KsqlStdOut.KSQL_STDOUT_NAME),
+          new PlanNodeId("KSQL_STDOUT_NAME"),
           sourcePlanNode,
           inputSchema,
           analysis.getLimitClause(),
           extractionPolicy
       );
-    } else if (intoDataSource != null) {
-      return new KsqlStructuredDataOutputNode(
-          new PlanNodeId(intoDataSource.getName()),
-          sourcePlanNode,
-          inputSchema,
-          extractionPolicy,
-          sourcePlanNode.getKeyField(),
-          intoDataSource.getKsqlTopic(),
-          intoDataSource.getKsqlTopic().getKafkaTopicName(),
-          intoProperties,
-          analysis.getLimitClause(),
-          analysis.isDoCreateInto()
-      );
-
     }
-    throw new RuntimeException("INTO clause is not supported in SELECT.");
+
+    final Into intoDataSource = analysis.getInto().get();
+
+    return new KsqlStructuredDataOutputNode(
+        new PlanNodeId(intoDataSource.getName()),
+        sourcePlanNode,
+        inputSchema,
+        extractionPolicy,
+        sourcePlanNode.getKeyField(),
+        intoDataSource.getKsqlTopic(),
+        intoDataSource.getKsqlTopic().getKafkaTopicName(),
+        intoProperties,
+        analysis.getLimitClause(),
+        intoDataSource.isCreate()
+    );
   }
 
   private static TimestampExtractionPolicy getTimestampExtractionPolicy(
@@ -150,8 +151,8 @@ public class LogicalPlanner {
         analysis.getGroupByExpressions(),
         analysis.getWindowExpression(),
         aggregateAnalysis.getAggregateFunctionArguments(),
-        aggregateAnalysis.getFunctionList(),
-        aggregateAnalysis.getRequiredColumnsList(),
+        aggregateAnalysis.getAggregateFunctions(),
+        aggregateAnalysis.getRequiredColumns(),
         aggregateAnalysis.getFinalSelectExpressions(),
         aggregateAnalysis.getHavingExpression()
     );

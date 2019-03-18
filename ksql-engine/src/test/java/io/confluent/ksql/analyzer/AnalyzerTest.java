@@ -1,8 +1,9 @@
 /*
  * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Confluent Community License; you may not use this file
- * except in compliance with the License.  You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
  * http://www.confluent.io/confluent-community-license
  *
@@ -15,24 +16,23 @@
 package io.confluent.ksql.analyzer;
 
 import static io.confluent.ksql.testutils.AnalysisTestUtil.analyzeQuery;
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
+import io.confluent.ksql.analyzer.Analysis.Into;
 import io.confluent.ksql.ddl.DdlConfig;
 import io.confluent.ksql.function.InternalFunctionRegistry;
-import io.confluent.ksql.metastore.KsqlStream;
-import io.confluent.ksql.metastore.KsqlTopic;
 import io.confluent.ksql.metastore.MetaStore;
 import io.confluent.ksql.metastore.MutableMetaStore;
-import io.confluent.ksql.metastore.StructuredDataSource;
+import io.confluent.ksql.metastore.model.KsqlStream;
+import io.confluent.ksql.metastore.model.KsqlTopic;
 import io.confluent.ksql.parser.KsqlParser.PreparedStatement;
 import io.confluent.ksql.parser.KsqlParserTestUtil;
 import io.confluent.ksql.parser.SqlFormatter;
 import io.confluent.ksql.parser.tree.CreateStreamAsSelect;
-import io.confluent.ksql.parser.tree.QualifiedName;
-import io.confluent.ksql.parser.tree.QuerySpecification;
+import io.confluent.ksql.parser.tree.Query;
 import io.confluent.ksql.parser.tree.Statement;
-import io.confluent.ksql.parser.tree.Table;
 import io.confluent.ksql.serde.avro.KsqlAvroTopicSerDe;
 import io.confluent.ksql.serde.json.KsqlJsonTopicSerDe;
 import io.confluent.ksql.util.KsqlConstants;
@@ -40,6 +40,7 @@ import io.confluent.ksql.util.KsqlException;
 import io.confluent.ksql.util.MetaStoreFixture;
 import io.confluent.ksql.util.timestamp.MetadataTimestampExtractionPolicy;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.connect.data.Schema;
@@ -50,6 +51,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+@SuppressWarnings("OptionalGetWithoutIsPresent")
 public class AnalyzerTest {
 
   private MutableMetaStore jsonMetaStore;
@@ -57,11 +59,13 @@ public class AnalyzerTest {
 
   @Rule
   public final ExpectedException expectedException = ExpectedException.none();
+  private Analysis analysis;
 
   @Before
   public void init() {
     jsonMetaStore = MetaStoreFixture.getNewMetaStore(new InternalFunctionRegistry());
     avroMetaStore = MetaStoreFixture.getNewMetaStore(new InternalFunctionRegistry(), () -> new KsqlAvroTopicSerDe(KsqlConstants.DEFAULT_AVRO_SCHEMA_FULL_NAME));
+    analysis = new Analysis();
   }
 
   @Test
@@ -71,12 +75,12 @@ public class AnalyzerTest {
     Assert.assertNotNull("INTO is null", analysis.getInto());
     Assert.assertNotNull("FROM is null", analysis.getFromDataSources());
     Assert.assertNotNull("SELECT is null", analysis.getSelectExpressions());
-    Assert.assertNotNull("SELECT aliacs is null", analysis.getSelectExpressionAlias());
+    Assert.assertNotNull("SELECT alias is null", analysis.getSelectExpressionAlias());
     Assert.assertTrue("FROM was not analyzed correctly.",
                       analysis.getFromDataSources().get(0).getLeft().getName()
                           .equalsIgnoreCase("test1"));
-    Assert.assertTrue(
-        analysis.getSelectExpressions().size() == analysis.getSelectExpressionAlias().size());
+    Assert.assertEquals(analysis.getSelectExpressions().size(),
+        analysis.getSelectExpressionAlias().size());
     final String
         sqlStr =
         SqlFormatter.formatSql(analysis.getWhereExpression()).replace("\n", " ");
@@ -120,8 +124,8 @@ public class AnalyzerTest {
     Assert.assertTrue("JOIN right hand side was not analyzed correctly.",
                       analysis.getJoin().getRightAlias().equalsIgnoreCase("t2"));
 
-    Assert.assertTrue(
-        analysis.getSelectExpressions().size() == analysis.getSelectExpressionAlias().size());
+    Assert.assertEquals(analysis.getSelectExpressions().size(),
+        analysis.getSelectExpressionAlias().size());
 
     Assert.assertTrue(analysis.getJoin().getLeftKeyFieldName().equalsIgnoreCase("COL1"));
     Assert.assertTrue(analysis.getJoin().getRightKeyFieldName().equalsIgnoreCase("COL1"));
@@ -227,29 +231,17 @@ public class AnalyzerTest {
     testMetastore.putTopic(ksqlTopic);
     final List<Statement> statements = parse(simpleQuery, testMetastore);
     final CreateStreamAsSelect createStreamAsSelect = (CreateStreamAsSelect) statements.get(0);
-    final Table intoTable = new Table(QualifiedName.of(createStreamAsSelect.getName().toString()));
-    intoTable.setProperties(createStreamAsSelect.getProperties());
-    final QuerySpecification querySpecification = (QuerySpecification) createStreamAsSelect.getQuery().getQueryBody();
-    final QuerySpecification newQuerySpecification = new QuerySpecification(
-        querySpecification.getSelect(),
-        intoTable,
-        false,
-        querySpecification.getFrom(),
-        querySpecification.getWindowExpression(),
-        querySpecification.getWhere(),
-        querySpecification.getGroupBy(),
-        querySpecification.getHaving(),
-        querySpecification.getLimit()
-    );
-    final Analysis analysis = new Analysis();
+    final Query query = createStreamAsSelect.getQuery();
+
     final Analyzer analyzer = new Analyzer("sqlExpression", analysis, testMetastore, "");
-    analyzer.visitQuerySpecification(newQuerySpecification, new AnalysisContext(null));
+    analyzer.analyze(query, Optional.of(createStreamAsSelect.getSink()));
 
     Assert.assertNotNull("INTO is null", analysis.getInto());
-    final StructuredDataSource structuredDataSource = analysis.getInto();
-    final KsqlTopic createdKsqlTopic = structuredDataSource.getKsqlTopic();
-    assertThat(createdKsqlTopic.getTopicName(), equalTo("FOO"));
-    assertThat(createdKsqlTopic.getKafkaTopicName(), equalTo("TEST_TOPIC1"));
+    final Optional<Into> into = analysis.getInto();
+    assertThat(into, is(not((Optional.empty()))));
+    final KsqlTopic createdKsqlTopic = into.get().getKsqlTopic();
+    assertThat(createdKsqlTopic.getKsqlTopicName(), is("FOO"));
+    assertThat(createdKsqlTopic.getKafkaTopicName(), is("TEST_TOPIC1"));
   }
 
   @Test
@@ -257,25 +249,14 @@ public class AnalyzerTest {
     final String simpleQuery = "CREATE STREAM FOO WITH (VALUE_FORMAT='AVRO', VALUE_AVRO_SCHEMA_FULL_NAME='com.custom.schema', KAFKA_TOPIC='TEST_TOPIC1') AS SELECT col0, col2, col3 FROM test1 WHERE col0 > 100;";
     final List<Statement> statements = parse(simpleQuery, jsonMetaStore);
     final CreateStreamAsSelect createStreamAsSelect = (CreateStreamAsSelect) statements.get(0);
-    final Table intoTable = new Table(QualifiedName.of(createStreamAsSelect.getName().toString()));
-    intoTable.setProperties(createStreamAsSelect.getProperties());
-    final QuerySpecification querySpecification = (QuerySpecification) createStreamAsSelect.getQuery().getQueryBody();
-    final QuerySpecification newQuerySpecification = new QuerySpecification(
-            querySpecification.getSelect(),
-            intoTable,
-            true,
-            querySpecification.getFrom(),
-            querySpecification.getWindowExpression(),
-            querySpecification.getWhere(),
-            querySpecification.getGroupBy(),
-            querySpecification.getHaving(),
-            querySpecification.getLimit()
-    );
-    final Analysis analysis = new Analysis();
-    final Analyzer analyzer = new Analyzer("sqlExpression", analysis, jsonMetaStore, "");
-    analyzer.visitQuerySpecification(newQuerySpecification, new AnalysisContext(null));
+    final Query query = createStreamAsSelect.getQuery();
 
-    assertThat(analysis.getIntoProperties().get(DdlConfig.VALUE_AVRO_SCHEMA_FULL_NAME).toString(), equalTo("'com.custom.schema'"));
+    final Analyzer analyzer = new Analyzer("sqlExpression", analysis, jsonMetaStore, "");
+    analyzer.analyze(query, Optional.of(createStreamAsSelect.getSink()));
+
+    assertThat(
+        analysis.getIntoProperties().get(DdlConfig.VALUE_AVRO_SCHEMA_FULL_NAME).toString(),
+        is("'com.custom.schema'"));
   }
 
   @Test
@@ -283,52 +264,30 @@ public class AnalyzerTest {
     final String simpleQuery = "CREATE STREAM FOO WITH (VALUE_FORMAT='AVRO', KAFKA_TOPIC='TEST_TOPIC1') AS SELECT col0, col2, col3 FROM test1 WHERE col0 > 100;";
     final List<Statement> statements = parse(simpleQuery, jsonMetaStore);
     final CreateStreamAsSelect createStreamAsSelect = (CreateStreamAsSelect) statements.get(0);
-    final Table intoTable = new Table(QualifiedName.of(createStreamAsSelect.getName().toString()));
-    intoTable.setProperties(createStreamAsSelect.getProperties());
-    final QuerySpecification querySpecification = (QuerySpecification) createStreamAsSelect.getQuery().getQueryBody();
-    final QuerySpecification newQuerySpecification = new QuerySpecification(
-            querySpecification.getSelect(),
-            intoTable,
-            true,
-            querySpecification.getFrom(),
-            querySpecification.getWindowExpression(),
-            querySpecification.getWhere(),
-            querySpecification.getGroupBy(),
-            querySpecification.getHaving(),
-            querySpecification.getLimit()
-    );
-    final Analysis analysis = new Analysis();
-    final Analyzer analyzer = new Analyzer("sqlExpression", analysis, jsonMetaStore, "");
-    analyzer.visitQuerySpecification(newQuerySpecification, new AnalysisContext(null));
+    final Query query = createStreamAsSelect.getQuery();
 
-    assertThat(analysis.getIntoProperties().get(DdlConfig.VALUE_AVRO_SCHEMA_FULL_NAME).toString(), equalTo(KsqlConstants.DEFAULT_AVRO_SCHEMA_FULL_NAME));
+    final Analyzer analyzer = new Analyzer("sqlExpression", analysis, jsonMetaStore, "");
+    analyzer.analyze(query, Optional.of(createStreamAsSelect.getSink()));
+
+    assertThat(
+        analysis.getIntoProperties().get(DdlConfig.VALUE_AVRO_SCHEMA_FULL_NAME).toString(),
+        is(KsqlConstants.DEFAULT_AVRO_SCHEMA_FULL_NAME));
   }
 
-  @Test
+    @Test
   public void shouldUseExplicitNamespaceWhenFormatIsInheritedForAvro() {
     final String simpleQuery = "create stream s1 with (VALUE_AVRO_SCHEMA_FULL_NAME='org.ac.s1') as select * from test1;";
 
     final List<Statement> statements = parse(simpleQuery, avroMetaStore);
     final CreateStreamAsSelect createStreamAsSelect = (CreateStreamAsSelect) statements.get(0);
-    final Table intoTable = new Table(QualifiedName.of(createStreamAsSelect.getName().toString()));
-    intoTable.setProperties(createStreamAsSelect.getProperties());
-    final QuerySpecification querySpecification = (QuerySpecification) createStreamAsSelect.getQuery().getQueryBody();
-    final QuerySpecification newQuerySpecification = new QuerySpecification(
-            querySpecification.getSelect(),
-            intoTable,
-            true,
-            querySpecification.getFrom(),
-            querySpecification.getWindowExpression(),
-            querySpecification.getWhere(),
-            querySpecification.getGroupBy(),
-            querySpecification.getHaving(),
-            querySpecification.getLimit()
-    );
-    final Analysis analysis = new Analysis();
-    final Analyzer analyzer = new Analyzer("sqlExpression", analysis, avroMetaStore, "");
-    analyzer.visitQuerySpecification(newQuerySpecification, new AnalysisContext(null));
+    final Query query = createStreamAsSelect.getQuery();
 
-    assertThat(analysis.getIntoProperties().get(DdlConfig.VALUE_AVRO_SCHEMA_FULL_NAME).toString(), equalTo("'org.ac.s1'"));
+    final Analyzer analyzer = new Analyzer("sqlExpression", analysis, avroMetaStore, "");
+    analyzer.analyze(query, Optional.of(createStreamAsSelect.getSink()));
+
+    assertThat(
+        analysis.getIntoProperties().get(DdlConfig.VALUE_AVRO_SCHEMA_FULL_NAME).toString(),
+        is("'org.ac.s1'"));
   }
 
   @Test
@@ -349,41 +308,28 @@ public class AnalyzerTest {
             .field("FIELD1", Schema.INT64_SCHEMA)
             .build();
 
-    final KsqlStream ksqlStream = new KsqlStream<>(
+    final KsqlStream<?> ksqlStream = new KsqlStream<>(
             "create stream s0 with(KAFKA_TOPIC='s0', VALUE_AVRO_SCHEMA_FULL_NAME='org.ac.s1', VALUE_FORMAT='avro');",
             "S0",
             schema,
-            schema.field("FIELD1"),
+            Optional.of(schema.field("FIELD1")),
             new MetadataTimestampExtractionPolicy(),
             ksqlTopic,
-            Serdes.String());
+            Serdes::String);
 
     newAvroMetaStore.putTopic(ksqlTopic);
     newAvroMetaStore.putSource(ksqlStream);
 
     final List<Statement> statements = parse(simpleQuery, newAvroMetaStore);
     final CreateStreamAsSelect createStreamAsSelect = (CreateStreamAsSelect) statements.get(0);
-    final Table intoTable = new Table(QualifiedName.of(createStreamAsSelect.getName().toString()));
-    intoTable.setProperties(createStreamAsSelect.getProperties());
-    final QuerySpecification querySpecification = (QuerySpecification) createStreamAsSelect.getQuery().getQueryBody();
-    final QuerySpecification newQuerySpecification = new QuerySpecification(
-            querySpecification.getSelect(),
-            intoTable,
-            true,
-            querySpecification.getFrom(),
-            querySpecification.getWindowExpression(),
-            querySpecification.getWhere(),
-            querySpecification.getGroupBy(),
-            querySpecification.getHaving(),
-            querySpecification.getLimit()
-    );
-    final Analysis analysis = new Analysis();
+    final Query query = createStreamAsSelect.getQuery();
+
     final Analyzer analyzer = new Analyzer("sqlExpression", analysis, newAvroMetaStore, "");
-    analyzer.visitQuerySpecification(newQuerySpecification, new AnalysisContext(null));
+    analyzer.analyze(query, Optional.of(createStreamAsSelect.getSink()));
 
     assertThat(
-            analysis.getIntoProperties().get(DdlConfig.VALUE_AVRO_SCHEMA_FULL_NAME).toString(),
-            equalTo(KsqlConstants.DEFAULT_AVRO_SCHEMA_FULL_NAME));
+        analysis.getIntoProperties().get(DdlConfig.VALUE_AVRO_SCHEMA_FULL_NAME).toString(),
+        is(KsqlConstants.DEFAULT_AVRO_SCHEMA_FULL_NAME));
   }
 
   @Test
@@ -392,25 +338,14 @@ public class AnalyzerTest {
 
     final List<Statement> statements = parse(simpleQuery, avroMetaStore);
     final CreateStreamAsSelect createStreamAsSelect = (CreateStreamAsSelect) statements.get(0);
-    final Table intoTable = new Table(QualifiedName.of(createStreamAsSelect.getName().toString()));
-    intoTable.setProperties(createStreamAsSelect.getProperties());
-    final QuerySpecification querySpecification = (QuerySpecification) createStreamAsSelect.getQuery().getQueryBody();
-    final QuerySpecification newQuerySpecification = new QuerySpecification(
-            querySpecification.getSelect(),
-            intoTable,
-            true,
-            querySpecification.getFrom(),
-            querySpecification.getWindowExpression(),
-            querySpecification.getWhere(),
-            querySpecification.getGroupBy(),
-            querySpecification.getHaving(),
-            querySpecification.getLimit()
-    );
-    final Analysis analysis = new Analysis();
-    final Analyzer analyzer = new Analyzer("sqlExpression", analysis, avroMetaStore, "");
-    analyzer.visitQuerySpecification(newQuerySpecification, new AnalysisContext(null));
+    final Query query = createStreamAsSelect.getQuery();
 
-    assertThat(analysis.getIntoProperties().get(DdlConfig.VALUE_AVRO_SCHEMA_FULL_NAME).toString(), equalTo(KsqlConstants.DEFAULT_AVRO_SCHEMA_FULL_NAME));
+    final Analyzer analyzer = new Analyzer("sqlExpression", analysis, avroMetaStore, "");
+    analyzer.analyze(query, Optional.of(createStreamAsSelect.getSink()));
+
+    assertThat(
+        analysis.getIntoProperties().get(DdlConfig.VALUE_AVRO_SCHEMA_FULL_NAME).toString(),
+        is(KsqlConstants.DEFAULT_AVRO_SCHEMA_FULL_NAME));
   }
 
   @Test
@@ -418,26 +353,14 @@ public class AnalyzerTest {
     final String simpleQuery = "CREATE STREAM FOO WITH (VALUE_FORMAT='JSON', VALUE_AVRO_SCHEMA_FULL_NAME='com.custom.schema', KAFKA_TOPIC='TEST_TOPIC1') AS SELECT col0, col2, col3 FROM test1 WHERE col0 > 100;";
     final List<Statement> statements = parse(simpleQuery, jsonMetaStore);
     final CreateStreamAsSelect createStreamAsSelect = (CreateStreamAsSelect) statements.get(0);
-    final Table intoTable = new Table(QualifiedName.of(createStreamAsSelect.getName().toString()));
-    intoTable.setProperties(createStreamAsSelect.getProperties());
-    final QuerySpecification querySpecification = (QuerySpecification) createStreamAsSelect.getQuery().getQueryBody();
-    final QuerySpecification newQuerySpecification = new QuerySpecification(
-            querySpecification.getSelect(),
-            intoTable,
-            true,
-            querySpecification.getFrom(),
-            querySpecification.getWindowExpression(),
-            querySpecification.getWhere(),
-            querySpecification.getGroupBy(),
-            querySpecification.getHaving(),
-            querySpecification.getLimit()
-    );
-    final Analysis analysis = new Analysis();
+    final Query query = createStreamAsSelect.getQuery();
+
     final Analyzer analyzer = new Analyzer("sqlExpression", analysis, jsonMetaStore, "");
 
     expectedException.expect(KsqlException.class);
     expectedException.expectMessage(DdlConfig.VALUE_AVRO_SCHEMA_FULL_NAME + " is only valid for AVRO topics.");
-    analyzer.visitQuerySpecification(newQuerySpecification, new AnalysisContext(null));
+
+    analyzer.analyze(query, Optional.of(createStreamAsSelect.getSink()));
   }
 
   @Test
@@ -445,26 +368,14 @@ public class AnalyzerTest {
     final String simpleQuery = "CREATE STREAM FOO WITH (VALUE_FORMAT='AVRO', VALUE_AVRO_SCHEMA_FULL_NAME='', KAFKA_TOPIC='TEST_TOPIC1') AS SELECT col0, col2, col3 FROM test1 WHERE col0 > 100;";
     final List<Statement> statements = parse(simpleQuery, jsonMetaStore);
     final CreateStreamAsSelect createStreamAsSelect = (CreateStreamAsSelect) statements.get(0);
-    final Table intoTable = new Table(QualifiedName.of(createStreamAsSelect.getName().toString()));
-    intoTable.setProperties(createStreamAsSelect.getProperties());
-    final QuerySpecification querySpecification = (QuerySpecification) createStreamAsSelect.getQuery().getQueryBody();
-    final QuerySpecification newQuerySpecification = new QuerySpecification(
-            querySpecification.getSelect(),
-            intoTable,
-            true,
-            querySpecification.getFrom(),
-            querySpecification.getWindowExpression(),
-            querySpecification.getWhere(),
-            querySpecification.getGroupBy(),
-            querySpecification.getHaving(),
-            querySpecification.getLimit()
-    );
-    final Analysis analysis = new Analysis();
+    final Query query = createStreamAsSelect.getQuery();
+
     final Analyzer analyzer = new Analyzer("sqlExpression", analysis, jsonMetaStore, "");
 
     expectedException.expect(IllegalArgumentException.class);
     expectedException.expectMessage("the schema name cannot be empty");
-    analyzer.visitQuerySpecification(newQuerySpecification, new AnalysisContext(null));
+
+    analyzer.analyze(query, Optional.of(createStreamAsSelect.getSink()));
   }
 
   private static List<Statement> parse(final String simpleQuery, final MetaStore metaStore) {

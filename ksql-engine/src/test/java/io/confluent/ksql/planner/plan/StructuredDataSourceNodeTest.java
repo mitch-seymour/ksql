@@ -1,8 +1,9 @@
 /*
  * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Confluent Community License; you may not use this file
- * except in compliance with the License.  You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
  * http://www.confluent.io/confluent-community-license
  *
@@ -32,12 +33,12 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableSet;
 import io.confluent.ksql.GenericRow;
 import io.confluent.ksql.function.InternalFunctionRegistry;
-import io.confluent.ksql.metastore.KsqlStream;
-import io.confluent.ksql.metastore.KsqlTable;
-import io.confluent.ksql.metastore.KsqlTopic;
-import io.confluent.ksql.processing.log.ProcessingLogConstants;
-import io.confluent.ksql.processing.log.ProcessingLogContext;
-import io.confluent.ksql.processing.log.ProcessingLoggerUtil;
+import io.confluent.ksql.logging.processing.ProcessingLogConstants;
+import io.confluent.ksql.logging.processing.ProcessingLogContext;
+import io.confluent.ksql.logging.processing.ProcessingLoggerUtil;
+import io.confluent.ksql.metastore.model.KsqlStream;
+import io.confluent.ksql.metastore.model.KsqlTable;
+import io.confluent.ksql.metastore.model.KsqlTopic;
 import io.confluent.ksql.query.QueryId;
 import io.confluent.ksql.serde.DataSource.DataSourceType;
 import io.confluent.ksql.serde.KsqlTopicSerDe;
@@ -56,6 +57,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -105,10 +107,10 @@ public class StructuredDataSourceNodeTest {
       new PlanNodeId("0"),
       new KsqlStream<>("sqlExpression", "datasource",
           realSchema,
-          realSchema.field("key"),
+          Optional.of(realSchema.field("key")),
           new LongColumnTimestampExtractionPolicy("timestamp"),
           new KsqlTopic("topic", "topic",
-              new KsqlJsonTopicSerDe(), false), Serdes.String()),
+              new KsqlJsonTopicSerDe(), false), Serdes::String),
       realSchema);
   private final QueryId queryId = new QueryId("source-test");
 
@@ -161,7 +163,7 @@ public class StructuredDataSourceNodeTest {
     when(tableSource.getKsqlTopic()).thenReturn(ksqlTopic);
     when(tableSource.isWindowed()).thenReturn(false);
     when(tableSource.getDataSourceType()).thenReturn(DataSourceType.KTABLE);
-    when(tableSource.getKeySerde()).thenReturn(keySerde);
+    when(tableSource.getKeySerdeFactory()).thenReturn(() -> keySerde);
     when(tableSource.getTimestampExtractionPolicy()).thenReturn(timestampExtractionPolicy);
     when(ksqlTopic.getKafkaTopicName()).thenReturn("topic");
     when(ksqlTopic.getKsqlTopicSerDe()).thenReturn(topicSerDe);
@@ -279,12 +281,11 @@ public class StructuredDataSourceNodeTest {
         new PlanNodeId("0"),
         new KsqlTable<>("sqlExpression", "datasource",
             realSchema,
-            realSchema.field("field"),
+            Optional.ofNullable(realSchema.field("field1")),
             new LongColumnTimestampExtractionPolicy("timestamp"),
             new KsqlTopic("topic2", "topic2",
                 new KsqlJsonTopicSerDe(), false),
-            "statestore",
-            Serdes.String()),
+            Serdes::String),
         realSchema);
     final SchemaKStream result = build(node);
     assertThat(result.getClass(), equalTo(SchemaKTable.class));
@@ -296,12 +297,11 @@ public class StructuredDataSourceNodeTest {
         new PlanNodeId("0"),
         new KsqlTable<>("sqlExpression", "datasource",
             realSchema,
-            realSchema.field("field"),
+            Optional.ofNullable(realSchema.field("field1")),
             new LongColumnTimestampExtractionPolicy("timestamp"),
             new KsqlTopic("topic2", "topic2",
                 new KsqlJsonTopicSerDe(), false),
-            "statestore",
-            Serdes.String()),
+            Serdes::String),
         realSchema);
     realBuilder = new StreamsBuilder();
     build(node);

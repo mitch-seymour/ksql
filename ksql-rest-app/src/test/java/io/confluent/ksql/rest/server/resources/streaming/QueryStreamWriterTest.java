@@ -1,8 +1,9 @@
 /*
  * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Confluent Community License; you may not use this file
- * except in compliance with the License.  You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
  * http://www.confluent.io/confluent-community-license
  *
@@ -28,9 +29,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 import io.confluent.ksql.GenericRow;
-import io.confluent.ksql.KsqlEngine;
+import io.confluent.ksql.engine.KsqlEngine;
 import io.confluent.ksql.json.JsonMapper;
-import io.confluent.ksql.planner.plan.OutputNode;
+import io.confluent.ksql.physical.LimitHandler;
 import io.confluent.ksql.util.KsqlException;
 import io.confluent.ksql.util.QueuedQueryMetadata;
 import java.io.ByteArrayOutputStream;
@@ -57,10 +58,6 @@ import org.junit.Test;
 import org.junit.rules.Timeout;
 import org.junit.runner.RunWith;
 
-/**
- * @author andy
- * created 19/04/2018
- */
 @SuppressWarnings({"unchecked", "ConstantConditions"})
 @RunWith(EasyMockRunner.class)
 public class QueryStreamWriterTest {
@@ -79,10 +76,10 @@ public class QueryStreamWriterTest {
   private BlockingQueue<KeyValue<String, GenericRow>> rowQueue;
   private Capture<Thread.UncaughtExceptionHandler> ehCapture;
   private Capture<Collection<KeyValue<String, GenericRow>>> drainCapture;
-  private Capture<OutputNode.LimitHandler> limitHandlerCapture;
+  private Capture<LimitHandler> limitHandlerCapture;
   private QueryStreamWriter writer;
   private ByteArrayOutputStream out;
-  private OutputNode.LimitHandler limitHandler;
+  private LimitHandler limitHandler;
   private ObjectMapper objectMapper;
 
   @Before

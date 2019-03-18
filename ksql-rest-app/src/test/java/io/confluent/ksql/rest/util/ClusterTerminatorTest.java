@@ -1,8 +1,9 @@
 /*
  * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Confluent Community License; you may not use this file
- * except in compliance with the License.  You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
  * http://www.confluent.io/confluent-community-license
  *
@@ -33,11 +34,12 @@ import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException;
-import io.confluent.ksql.KsqlEngine;
-import io.confluent.ksql.metastore.KsqlTopic;
+import io.confluent.ksql.engine.KsqlEngine;
 import io.confluent.ksql.metastore.MetaStore;
-import io.confluent.ksql.metastore.StructuredDataSource;
+import io.confluent.ksql.metastore.model.KsqlTopic;
+import io.confluent.ksql.metastore.model.StructuredDataSource;
 import io.confluent.ksql.serde.DataSource.DataSourceSerDe;
+import io.confluent.ksql.serde.json.KsqlJsonTopicSerDe;
 import io.confluent.ksql.services.KafkaTopicClient;
 import io.confluent.ksql.services.ServiceContext;
 import io.confluent.ksql.util.KsqlConfig;
@@ -48,7 +50,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -71,9 +72,6 @@ public class ClusterTerminatorTest {
       MANAGED_TOPIC_1,
       MANAGED_TOPIC_2
   );
-
-
-  private static final String SOURCE_SUFFIX = "_source";
 
   @Mock
   private KsqlConfig ksqlConfig;
@@ -266,7 +264,8 @@ public class ClusterTerminatorTest {
     // Given:
     givenTopicsExistInKafka("K_Fo", "K_Foo", "K_Fooo", "NotMatched");
     givenSinkTopicsExistInMetastore("K_Fo", "K_Foo", "K_Fooo", "NotMatched");
-    final ArgumentCaptor<Collection> argumentCaptor = ArgumentCaptor.forClass(Collection.class);
+    final ArgumentCaptor<Collection<String>> argumentCaptor = ArgumentCaptor
+        .forClass(Collection.class);
 
     // When:
     clusterTerminator.terminateCluster(ImmutableList.of("K_Fo.*"));
@@ -404,7 +403,7 @@ public class ClusterTerminatorTest {
 
   private static KsqlTopic getKsqlTopic(final String topicName, final String kafkaTopicName,
       final boolean isSink) {
-    return new KsqlTopic(topicName, kafkaTopicName, null, isSink);
+    return new KsqlTopic(topicName, kafkaTopicName, new KsqlJsonTopicSerDe(), isSink);
   }
 
   private void givenSinkTopicsExistInMetastore(final String... kafkaTopicNames) {
@@ -423,10 +422,9 @@ public class ClusterTerminatorTest {
 
   private void givenTopicsUseAvroSerdes(final String... topicNames) {
     for (final String topicName : topicNames) {
-      final StructuredDataSource dataSource = mock(StructuredDataSource.class);
+      final StructuredDataSource<?> dataSource = mock(StructuredDataSource.class);
 
-      when(metaStore.getSourceForTopic(topicName)).thenReturn(Optional.of(dataSource));
-      when(dataSource.getName()).thenReturn(topicName + SOURCE_SUFFIX);
+      when(metaStore.getSourcesForKafkaTopic(topicName)).thenReturn(ImmutableList.of(dataSource));
       when(dataSource.isSerdeFormat(DataSourceSerDe.AVRO)).thenReturn(true);
     }
   }
@@ -438,7 +436,7 @@ public class ClusterTerminatorTest {
 
   private void givenSchemasForTopicsExistInSchemaRegistry(final String... topicNames) throws Exception {
     final Collection<String> subjectNames = Stream.of(topicNames)
-        .map(topicName -> topicName + SOURCE_SUFFIX + KsqlConstants.SCHEMA_REGISTRY_VALUE_SUFFIX)
+        .map(topicName -> topicName + KsqlConstants.SCHEMA_REGISTRY_VALUE_SUFFIX)
         .collect(Collectors.toList());
     when(schemaRegistryClient.getAllSubjects()).thenReturn(subjectNames);
   }
@@ -446,12 +444,12 @@ public class ClusterTerminatorTest {
   private void verifySchemaDeletedForTopics(final String... topicNames) throws Exception {
     for (final String topicName : topicNames) {
       verify(schemaRegistryClient).deleteSubject(
-          topicName + SOURCE_SUFFIX + KsqlConstants.SCHEMA_REGISTRY_VALUE_SUFFIX);
+          topicName + KsqlConstants.SCHEMA_REGISTRY_VALUE_SUFFIX);
     }
   }
 
   private void verifySchemaNotDeletedForTopic(final String topicName) throws Exception {
     verify(schemaRegistryClient, never()).deleteSubject(
-        topicName + SOURCE_SUFFIX + KsqlConstants.SCHEMA_REGISTRY_VALUE_SUFFIX);
+        topicName + KsqlConstants.SCHEMA_REGISTRY_VALUE_SUFFIX);
   }
 }

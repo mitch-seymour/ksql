@@ -1,8 +1,9 @@
 /*
  * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Confluent Community License; you may not use this file
- * except in compliance with the License.  You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
  * http://www.confluent.io/confluent-community-license
  *
@@ -18,15 +19,16 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertThat;
 
 import com.google.common.collect.ImmutableMap;
-import io.confluent.ksql.metastore.KsqlStream;
-import io.confluent.ksql.metastore.KsqlTopic;
-import io.confluent.ksql.metastore.StructuredDataSource;
+import io.confluent.ksql.metastore.model.KsqlStream;
+import io.confluent.ksql.metastore.model.KsqlTopic;
+import io.confluent.ksql.metastore.model.StructuredDataSource;
 import io.confluent.ksql.metrics.ConsumerCollector;
 import io.confluent.ksql.metrics.StreamsErrorCollector;
 import io.confluent.ksql.serde.json.KsqlJsonTopicSerDe;
 import io.confluent.ksql.util.timestamp.MetadataTimestampExtractionPolicy;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -58,17 +60,17 @@ public class SourceDescriptionTest {
     consumerCollector.close();
   }
 
-  private StructuredDataSource buildDataSource(final String kafkaTopicName) {
+  private StructuredDataSource<?> buildDataSource(final String kafkaTopicName) {
     final Schema schema = SchemaBuilder.struct()
         .field("field0", Schema.OPTIONAL_INT32_SCHEMA)
         .build();
     final KsqlTopic topic = new KsqlTopic("internal", kafkaTopicName, new KsqlJsonTopicSerDe(), true);
     return new KsqlStream<>(
-        "query", "stream", schema, schema.fields().get(0),
-        new MetadataTimestampExtractionPolicy(), topic, Serdes.String());
+        "query", "stream", schema, Optional.of(schema.fields().get(0)),
+        new MetadataTimestampExtractionPolicy(), topic, Serdes::String);
   }
 
-  private ConsumerRecords buildRecords(final String kafkaTopicName) {
+  private ConsumerRecords<Object, Object> buildRecords(final String kafkaTopicName) {
     return new ConsumerRecords<>(
         ImmutableMap.of(
             new TopicPartition(kafkaTopicName, 1),
@@ -85,7 +87,7 @@ public class SourceDescriptionTest {
   public void shouldReturnStatsBasedOnKafkaTopic() {
     // Given:
     final String kafkaTopicName = "kafka";
-    final StructuredDataSource dataSource = buildDataSource(kafkaTopicName);
+    final StructuredDataSource<?> dataSource = buildDataSource(kafkaTopicName);
     consumerCollector.onConsume(buildRecords(kafkaTopicName));
     StreamsErrorCollector.recordError(APP_ID, kafkaTopicName);
 

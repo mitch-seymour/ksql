@@ -1,8 +1,9 @@
 /*
  * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Confluent Community License; you may not use this file
- * except in compliance with the License.  You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
  * http://www.confluent.io/confluent-community-license
  *
@@ -14,12 +15,13 @@
 
 package io.confluent.ksql.ddl.commands;
 
-import io.confluent.ksql.metastore.KsqlStream;
 import io.confluent.ksql.metastore.MutableMetaStore;
+import io.confluent.ksql.metastore.model.KsqlStream;
 import io.confluent.ksql.parser.tree.CreateStream;
 import io.confluent.ksql.services.KafkaTopicClient;
 import io.confluent.ksql.util.KsqlException;
 import io.confluent.ksql.util.SchemaUtil;
+import java.util.Optional;
 
 public class CreateStreamCommand extends AbstractCreateStreamCommand {
 
@@ -48,10 +50,10 @@ public class CreateStreamCommand extends AbstractCreateStreamCommand {
         sourceName,
         schema,
         (keyColumnName.length() == 0)
-          ? null : SchemaUtil.getFieldByName(schema, keyColumnName).orElse(null),
+          ? Optional.empty() : SchemaUtil.getFieldByName(schema, keyColumnName),
         timestampExtractionPolicy,
         metaStore.getTopic(topicName),
-        keySerde
+        keySerdeFactory
     );
 
     metaStore.putSource(ksqlStream.cloneWithTimeKeyColumns());

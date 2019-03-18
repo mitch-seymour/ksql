@@ -1,8 +1,9 @@
 /*
- * Copyright 2019 Confluent Inc.
+ * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Confluent Community License; you may not use this file
- * except in compliance with the License.  You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
  * http://www.confluent.io/confluent-community-license
  *
@@ -25,6 +26,8 @@ import static org.mockito.Mockito.when;
 import com.google.common.collect.ImmutableSet;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.confluent.ksql.function.MutableFunctionRegistry;
+import io.confluent.ksql.metastore.model.KsqlTopic;
+import io.confluent.ksql.metastore.model.StructuredDataSource;
 import io.confluent.ksql.util.KsqlException;
 import io.confluent.ksql.util.KsqlReferentialIntegrityException;
 import java.util.Map;
@@ -56,9 +59,9 @@ public class MetaStoreImplTest {
   @Mock
   private KsqlTopic topic;
   @Mock
-  private StructuredDataSource dataSource;
+  private StructuredDataSource<?> dataSource;
   @Mock
-  private StructuredDataSource dataSource1;
+  private StructuredDataSource<?> dataSource1;
   private MetaStoreImpl metaStore;
   private ExecutorService executor;
 
@@ -139,7 +142,7 @@ public class MetaStoreImplTest {
     // Given:
     metaStore.putSource(dataSource);
 
-    final Map<String, StructuredDataSource> dataSources = metaStore
+    final Map<String, StructuredDataSource<?>> dataSources = metaStore
         .getAllStructuredDataSources();
 
     // When
@@ -353,7 +356,7 @@ public class MetaStoreImplTest {
           metaStore.putTopic(topic);
           metaStore.getTopic(topic.getName());
 
-          final StructuredDataSource source = mock(StructuredDataSource.class);
+          final StructuredDataSource<?> source = mock(StructuredDataSource.class);
           when(source.getName()).thenReturn("source" + idx);
           metaStore.putSource(source);
           metaStore.getSource(source.getName());

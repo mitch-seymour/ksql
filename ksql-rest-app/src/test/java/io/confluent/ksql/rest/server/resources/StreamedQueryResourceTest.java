@@ -1,8 +1,9 @@
 /*
  * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Confluent Community License; you may not use this file
- * except in compliance with the License.  You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
  * http://www.confluent.io/confluent-community-license
  *
@@ -37,8 +38,8 @@ import static org.junit.Assert.assertEquals;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.confluent.ksql.GenericRow;
-import io.confluent.ksql.KsqlEngine;
 import io.confluent.ksql.KsqlExecutionContext.ExecuteResult;
+import io.confluent.ksql.engine.KsqlEngine;
 import io.confluent.ksql.json.JsonMapper;
 import io.confluent.ksql.parser.KsqlParser.PreparedStatement;
 import io.confluent.ksql.parser.tree.Query;
@@ -74,6 +75,7 @@ import java.util.function.Consumer;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.StreamingOutput;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 import org.apache.kafka.streams.KafkaStreams;
 import org.apache.kafka.streams.KeyValue;
@@ -94,6 +96,9 @@ public class StreamedQueryResourceTest {
 
   private static final Duration DISCONNECT_CHECK_INTERVAL = Duration.ofMillis(1000);
   private static final Duration COMMAND_QUEUE_CATCHUP_TIMOEUT = Duration.ofMillis(1000);
+  private static final Schema SOME_SCHEMA = SchemaBuilder.struct()
+      .field("f1", SchemaBuilder.OPTIONAL_INT32_SCHEMA)
+      .build();
 
   @Rule
   public final ExpectedException expectedException = ExpectedException.none();
@@ -285,7 +290,9 @@ public class StreamedQueryResourceTest {
         new QueuedQueryMetadata(
             queryString,
             mockKafkaStreams,
-            mockOutputNode,
+            SOME_SCHEMA,
+            Collections.emptySet(),
+            limitHandler -> {},
             "",
             rowQueue,
             DataSource.DataSourceType.KSTREAM,
@@ -295,8 +302,6 @@ public class StreamedQueryResourceTest {
             Collections.emptyMap(),
             queryCloseCallback);
     reset(mockOutputNode);
-    expect(mockOutputNode.getSchema())
-        .andReturn(SchemaBuilder.struct().field("f1", SchemaBuilder.OPTIONAL_INT32_SCHEMA));
     expect(mockKsqlEngine.execute(statement, ksqlConfig, requestStreamsProperties))
         .andReturn(ExecuteResult.of(queuedQueryMetadata));
 

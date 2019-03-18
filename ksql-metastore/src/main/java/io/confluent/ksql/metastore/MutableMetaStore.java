@@ -1,8 +1,9 @@
 /*
- * Copyright 2019 Confluent Inc.
+ * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Confluent Community License; you may not use this file
- * except in compliance with the License.  You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
  * http://www.confluent.io/confluent-community-license
  *
@@ -16,6 +17,8 @@ package io.confluent.ksql.metastore;
 
 import io.confluent.ksql.function.MutableFunctionRegistry;
 
+import io.confluent.ksql.metastore.model.KsqlTopic;
+import io.confluent.ksql.metastore.model.StructuredDataSource;
 import java.util.Set;
 
 public interface MutableMetaStore extends MetaStore {
@@ -24,7 +27,7 @@ public interface MutableMetaStore extends MetaStore {
 
   void putTopic(KsqlTopic topic);
 
-  void putSource(StructuredDataSource dataSource);
+  void putSource(StructuredDataSource<?> dataSource);
 
   void deleteTopic(String topicName);
 

@@ -1,8 +1,9 @@
 /*
  * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Confluent Community License; you may not use this file
- * except in compliance with the License.  You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
  * http://www.confluent.io/confluent-community-license
  *
@@ -19,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeName;
-import io.confluent.ksql.metastore.StructuredDataSource;
+import io.confluent.ksql.metastore.model.StructuredDataSource;
 import io.confluent.ksql.metrics.MetricCollectors;
 import io.confluent.ksql.rest.util.EntityUtil;
 import io.confluent.ksql.services.KafkaTopicClient;
@@ -86,7 +87,7 @@ public class SourceDescription {
   }
 
   public SourceDescription(
-      final StructuredDataSource dataSource,
+      final StructuredDataSource<?> dataSource,
       final boolean extended,
       final String format,
       final List<RunningQuery> readQueries,
@@ -99,7 +100,7 @@ public class SourceDescription {
         writeQueries,
         EntityUtil.buildSourceSchemaEntity(dataSource.getSchema()),
         dataSource.getDataSourceType().getKqlType(),
-        Optional.ofNullable(dataSource.getKeyField()).map(Field::name).orElse(""),
+        dataSource.getKeyField().map(Field::name).orElse(""),
         Optional.ofNullable(dataSource.getTimestampExtractionPolicy())
             .map(TimestampExtractionPolicy::timestampField).orElse(""),
         (extended

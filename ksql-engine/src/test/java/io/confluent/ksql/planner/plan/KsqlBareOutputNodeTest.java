@@ -1,8 +1,9 @@
 /*
  * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Confluent Community License; you may not use this file
- * except in compliance with the License.  You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
  * http://www.confluent.io/confluent-community-license
  *
@@ -23,13 +24,13 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.google.common.collect.ImmutableSet;
 import io.confluent.ksql.function.InternalFunctionRegistry;
+import io.confluent.ksql.logging.processing.ProcessingLogContext;
 import io.confluent.ksql.metastore.MetaStore;
-import io.confluent.ksql.processing.log.ProcessingLogContext;
 import io.confluent.ksql.query.QueryId;
 import io.confluent.ksql.services.ServiceContext;
 import io.confluent.ksql.services.TestServiceContext;
-import io.confluent.ksql.structured.LogicalPlanBuilderTestUtil;
 import io.confluent.ksql.structured.SchemaKStream;
+import io.confluent.ksql.testutils.AnalysisTestUtil;
 import io.confluent.ksql.util.KsqlConfig;
 import io.confluent.ksql.util.MetaStoreFixture;
 import io.confluent.ksql.util.QueryIdGenerator;
@@ -54,7 +55,7 @@ public class KsqlBareOutputNodeTest {
   private static final String TRANSFORM_NODE = "KSTREAM-TRANSFORMVALUES-0000000002";
   private static final String FILTER_NODE = "KSTREAM-FILTER-0000000003";
   private static final String FILTER_MAPVALUES_NODE = "KSTREAM-MAPVALUES-0000000004";
-  private static final String FOREACH_NODE = "KSTREAM-FOREACH-0000000005";
+
   private SchemaKStream stream;
   private StreamsBuilder builder;
   private final MetaStore metaStore = MetaStoreFixture.getNewMetaStore(new InternalFunctionRegistry());
@@ -102,18 +103,6 @@ public class KsqlBareOutputNodeTest {
   }
 
   @Test
-  public void shouldBuildMapValuesNode() {
-    final TopologyDescription.Processor node = (TopologyDescription.Processor) getNodeByName(FILTER_MAPVALUES_NODE);
-    verifyProcessorNode(node, Collections.singletonList(FILTER_NODE), Collections.singletonList(FOREACH_NODE));
-  }
-
-  @Test
-  public void shouldBuildForEachNode() {
-    final TopologyDescription.Processor node = (TopologyDescription.Processor) getNodeByName(FOREACH_NODE);
-    verifyProcessorNode(node, Collections.singletonList(FILTER_MAPVALUES_NODE), Collections.emptyList());
-  }
-
-  @Test
   public void shouldCreateCorrectSchema() {
     final Schema schema = stream.getSchema();
     assertThat(schema.fields(), equalTo(Arrays.asList(new Field("COL0", 0, Schema.OPTIONAL_INT64_SCHEMA),
@@ -125,7 +114,7 @@ public class KsqlBareOutputNodeTest {
   public void shouldComputeQueryIdCorrectly() {
     // Given:
     final KsqlBareOutputNode node
-        = (KsqlBareOutputNode) LogicalPlanBuilderTestUtil
+        = (KsqlBareOutputNode) AnalysisTestUtil
         .buildLogicalPlan("select col0 from test1;", metaStore);
     final QueryIdGenerator queryIdGenerator = mock(QueryIdGenerator.class);
 
@@ -146,7 +135,7 @@ public class KsqlBareOutputNodeTest {
 
   private SchemaKStream build() {
     final String simpleSelectFilter = "SELECT col0, col2, col3 FROM test1 WHERE col0 > 100;";
-    final KsqlBareOutputNode planNode = (KsqlBareOutputNode) LogicalPlanBuilderTestUtil
+    final KsqlBareOutputNode planNode = (KsqlBareOutputNode) AnalysisTestUtil
         .buildLogicalPlan(simpleSelectFilter, metaStore);
     return planNode.buildStream(
         builder,

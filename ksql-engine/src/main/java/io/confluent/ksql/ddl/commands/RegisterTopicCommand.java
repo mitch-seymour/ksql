@@ -1,8 +1,9 @@
 /*
  * Copyright 2018 Confluent Inc.
  *
- * Licensed under the Confluent Community License; you may not use this file
- * except in compliance with the License.  You may obtain a copy of the License at
+ * Licensed under the Confluent Community License (the "License"); you may not use
+ * this file except in compliance with the License.  You may obtain a copy of the
+ * License at
  *
  * http://www.confluent.io/confluent-community-license
  *
@@ -15,10 +16,10 @@
 package io.confluent.ksql.ddl.commands;
 
 import io.confluent.ksql.ddl.DdlConfig;
-import io.confluent.ksql.metastore.KsqlTopic;
 import io.confluent.ksql.metastore.MetaStore;
 import io.confluent.ksql.metastore.MutableMetaStore;
-import io.confluent.ksql.metastore.StructuredDataSource;
+import io.confluent.ksql.metastore.model.KsqlTopic;
+import io.confluent.ksql.metastore.model.StructuredDataSource;
 import io.confluent.ksql.parser.tree.Expression;
 import io.confluent.ksql.parser.tree.RegisterTopic;
 import io.confluent.ksql.serde.DataSource;
@@ -84,17 +85,15 @@ public class RegisterTopicCommand implements DdlCommand {
     }
   }
 
-  private void enforceTopicProperties(final Map<String, Expression> properties) {
-    if (properties.size() == 0) {
-      throw new KsqlException("Register topic statement needs WITH clause.");
-    }
-
+  private static void enforceTopicProperties(final Map<String, Expression> properties) {
     if (!properties.containsKey(DdlConfig.VALUE_FORMAT_PROPERTY)) {
-      throw new KsqlException("Topic format(format) should be set in WITH clause.");
+      throw new KsqlException("Topic format("
+          + DdlConfig.VALUE_FORMAT_PROPERTY + ") should be set in WITH clause.");
     }
 
     if (!properties.containsKey(DdlConfig.KAFKA_TOPIC_NAME_PROPERTY)) {
-      throw new KsqlException("Corresponding kafka topic should be set in WITH clause.");
+      throw new KsqlException("Corresponding Kafka topic ("
+          + DdlConfig.KAFKA_TOPIC_NAME_PROPERTY + ") should be set in WITH clause.");
     }
   }
 
