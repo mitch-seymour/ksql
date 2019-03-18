@@ -18,6 +18,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+
 import io.confluent.ksql.util.TypeUtil;
 
 import java.util.ArrayList;
@@ -27,7 +28,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.kafka.connect.data.Schema;
-import org.graalvm.polyglot.Context;
 
 public class CreateFunction
     extends Statement implements ExecutableDdlStatement {
@@ -80,15 +80,6 @@ public class CreateFunction
     this.replace = requireNonNull(replace, "replace is null");
   }
 
-  public boolean isExecutable() {
-    try (Context context = Context.create(getLanguage())) {
-      return context.eval(getLanguage(), getScript()).canExecute();
-    } catch (Exception e) {
-      // TODO: make sure the exception bubbles up somewhere
-      return false;
-    }
-  }
-
   public String formatLanguage(final String lang) {
     if (lang.equalsIgnoreCase("javascript")) {
       return "js";
@@ -134,6 +125,28 @@ public class CreateFunction
       arguments.add(TypeUtil.getTypeSchema(element.getType()));
     }
     return arguments;
+  }
+
+  public String[] getArgumentNames() {
+    final int size = elements.size();
+    final String[] argumentNames = new String[size];
+    for (int i = 0; i < size; i++) {
+      argumentNames[i] = elements.get(i).getName();
+    }
+    return argumentNames;
+  }
+
+  public Class[] getArgumentTypes() {
+    final int size = elements.size();
+    final Class[] argumentTypes = new Class[size];
+    for (int i = 0; i < size; i++) {
+      /*
+      LogicalSchemas.fromSqlTypeConverter().fromSqlType(elements.get(i).getType());
+      argumentTypes[i] = SchemaUtil.getJavaType(null);
+      */
+      argumentTypes[i] =  elements.get(i).getClass();
+    }
+    return argumentTypes;
   }
 
   public String getLanguage() {

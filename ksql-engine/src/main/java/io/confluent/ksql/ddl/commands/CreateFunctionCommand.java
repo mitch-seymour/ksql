@@ -29,6 +29,8 @@ import io.confluent.ksql.util.SchemaUtil;
 import java.lang.reflect.Constructor;
 import java.util.function.Function;
 
+import org.codehaus.commons.compiler.CompilerFactoryFactory;
+import org.codehaus.commons.compiler.IScriptEvaluator;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.slf4j.Logger;
@@ -58,25 +60,40 @@ public class CreateFunctionCommand implements DdlCommand {
    * A method for retrieving a custom Kudf class. This class gets instantiated
    * everytime a query is created with the custom function.
    */
-  static Class<? extends Kudf> getKudf() {
-    class CustomKudf implements Kudf {
-      private final Context context;
-      private final Value function;
-      private final String language;
-      private final String name;
-      private final Class returnType;
+  static Class<? extends Kudf> getKudf(final String language) {
+    abstract class CustomKudf implements Kudf {
+      protected final String[] argumentNames;
+      protected final String language;
+      protected final String name;
+      protected final Class returnType;
+      protected final String script;
 
       public CustomKudf(final CreateFunction cf) {
+        this.argumentNames = cf.getArgumentNames();
         this.language = cf.getLanguage();
         this.name = cf.getName();
-        this.context = Context.create(language);
-        this.function = context.eval(language, cf.getScript());
         this.returnType = SchemaUtil.getJavaType(cf.getReturnType());
+        this.script = cf.getScript();
       }
 
       @Override
       public String toString() {
         return name;
+      }
+    }
+
+    class InlineMultilingualUdf extends CustomKudf {
+      private final Context context;
+
+      public InlineMultilingualUdf(final CreateFunction cf) {
+        super(cf);
+        // build the polyglot context.
+        // TODO: set the security settings from new KSQL configs
+        this.context = Context.newBuilder(new String[]{language})
+          .allowIO(true)
+          .allowHostAccess(true)
+          .allowNativeAccess(true)
+          .build();
       }
 
       @SuppressWarnings("unchecked")
@@ -84,7 +101,13 @@ public class CreateFunctionCommand implements DdlCommand {
       public Object evaluate(final Object... args) {
         Object value;
         try {
-          value = function.execute(args).as(returnType);
+          final Value bindings = context.getPolyglotBindings();
+          for (int i = 0; i < args.length; i++) {
+            // TODO: argument names are converted to all caps. either make sure this is
+            // documented, or figure out how to maintain original case
+            bindings.putMember(argumentNames[i], args[i]);
+          }
+          value = context.eval(language, script).as(returnType);
         } catch (Exception e) {
           LOG.warn("Exception encountered while executing function. Setting value to null", e);
           value = null;
@@ -93,7 +116,38 @@ public class CreateFunctionCommand implements DdlCommand {
       }
     }
 
-    return CustomKudf.class;
+    class InlineJavaUdf extends CustomKudf {
+      private final IScriptEvaluator se;
+
+      public InlineJavaUdf(final CreateFunction cf) throws Exception {
+        super(cf);
+        se = CompilerFactoryFactory
+            .getDefaultCompilerFactory()
+            .newScriptEvaluator();
+        se.setReturnType(returnType);
+        se.setParameters(argumentNames, new Class[] { String.class, String.class });
+        se.cook(script);
+      }
+
+      @SuppressWarnings("unchecked")
+      @Override
+      public Object evaluate(final Object... args) {
+        Object value;
+        try {
+          value = se.evaluate(args);
+        } catch (Exception e) {
+          LOG.warn("Exception encountered while executing function. Setting value to null", e);
+          value = null;
+        }
+        return value;
+      }
+    }
+
+    if (language.trim().equalsIgnoreCase("java")) {
+      return InlineJavaUdf.class;
+    }
+
+    return InlineMultilingualUdf.class;
   }
 
   Function<KsqlConfig, Kudf> getUdfFactory(final Class<? extends Kudf> kudfClass) {
@@ -114,7 +168,7 @@ public class CreateFunctionCommand implements DdlCommand {
     try {
       final MutableFunctionRegistry functionRegistry = metaStore.getFunctionRegistry();
 
-      final Class<? extends Kudf> kudfClass = getKudf();
+      final Class<? extends Kudf> kudfClass = getKudf(createFunction.getLanguage());
       final Function<KsqlConfig, Kudf> udfFactory = getUdfFactory(kudfClass);
 
       final KsqlFunction ksqlFunction = KsqlFunction.create(

@@ -932,10 +932,7 @@ public class KsqlResource {
     }
 
     private void validateCreateFunction(final PreparedStatement<CreateFunction> statement) {
-      if (!statement.getStatement().isExecutable()) {
-        throw new KsqlStatementException(
-            "Function is not executable", statement.getStatementText());
-      }
+      // TODO: add validation logic
     }
 
     private void validateDescribeFunction(final PreparedStatement<DescribeFunction> statement) {
