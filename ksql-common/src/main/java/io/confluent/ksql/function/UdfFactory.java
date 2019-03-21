@@ -54,6 +54,12 @@ public class UdfFactory {
     functions.put(paramTypes, ksqlFunction);
   }
 
+  void addOrReplaceFunction(final KsqlFunction ksqlFunction) {
+    final List<FunctionParameter> paramTypes
+        = mapToFunctionParameter(ksqlFunction.getArguments());
+    functions.put(paramTypes, ksqlFunction);
+  }
+
   private void checkCompatible(final KsqlFunction ksqlFunction,
                                final List<FunctionParameter> paramTypes) {
     if (udfClass != ksqlFunction.getKudfClass()) {
