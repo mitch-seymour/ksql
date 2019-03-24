@@ -21,6 +21,8 @@ import static java.util.stream.Collectors.toList;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.confluent.ksql.metastore.model.StructuredDataSource;
+import io.confluent.ksql.parser.SqlBaseParser.FunctionPropertiesContext;
+import io.confluent.ksql.parser.SqlBaseParser.FunctionPropertyContext;
 import io.confluent.ksql.parser.SqlBaseParser.IntegerLiteralContext;
 import io.confluent.ksql.parser.SqlBaseParser.IntervalClauseContext;
 import io.confluent.ksql.parser.SqlBaseParser.LimitClauseContext;
@@ -35,6 +37,7 @@ import io.confluent.ksql.parser.tree.BetweenPredicate;
 import io.confluent.ksql.parser.tree.BooleanLiteral;
 import io.confluent.ksql.parser.tree.Cast;
 import io.confluent.ksql.parser.tree.ComparisonExpression;
+import io.confluent.ksql.parser.tree.CreateFunction;
 import io.confluent.ksql.parser.tree.CreateStream;
 import io.confluent.ksql.parser.tree.CreateStreamAsSelect;
 import io.confluent.ksql.parser.tree.CreateTable;
@@ -109,6 +112,7 @@ import io.confluent.ksql.parser.tree.UnsetProperty;
 import io.confluent.ksql.parser.tree.WhenClause;
 import io.confluent.ksql.parser.tree.WindowExpression;
 import io.confluent.ksql.parser.tree.WithinExpression;
+import io.confluent.ksql.schema.ksql.LogicalSchemas;
 import io.confluent.ksql.serde.DataSource;
 import io.confluent.ksql.util.DataSourceExtractor;
 import io.confluent.ksql.util.KsqlConstants;
@@ -163,6 +167,21 @@ public class AstBuilder extends SqlBaseBaseVisitor<Node> {
   @Override
   public Node visitSingleExpression(final SqlBaseParser.SingleExpressionContext context) {
     return visit(context.expression());
+  }
+
+  private Map<String, Expression> processFunctionProperties(
+      final FunctionPropertiesContext functionPropertiesContext
+  ) {
+    final ImmutableMap.Builder<String, Expression> properties = ImmutableMap.builder();
+    if (functionPropertiesContext != null) {
+      for (final FunctionPropertyContext prop : functionPropertiesContext.functionProperty()) {
+        properties.put(
+            getIdentifierText(prop.identifier()),
+            (Expression) visit(prop.expression())
+        );
+      }
+    }
+    return properties.build();
   }
 
   private Map<String, Expression> processTableProperties(
@@ -234,6 +253,22 @@ public class AstBuilder extends SqlBaseBaseVisitor<Node> {
         context.EXISTS() != null,
         processTableProperties(context.tableProperties())
     );
+  }
+
+  @Override
+  public Node visitCreateFunction(final SqlBaseParser.CreateFunctionContext context) {
+    final String language = getIdentifierText(context.languageName().identifier());
+    final String script = context.udfScript().getText().replaceAll("\\$\\$", "").trim();
+    return new CreateFunction(
+        getLocation(context),
+        getQualifiedName(context.qualifiedName()),
+        visit(context.tableElement(), TableElement.class),
+        language,
+        script,
+        LogicalSchemas.fromSqlTypeConverter().fromSqlType(getType(context.type())),
+        processFunctionProperties(context.functionProperties()),
+        context.REPLACE() != null
+        );
   }
 
   @Override

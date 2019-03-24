@@ -16,6 +16,8 @@
 package io.confluent.ksql.rest.server.computation;
 
 import com.google.common.collect.ImmutableMap;
+
+import io.confluent.ksql.parser.tree.CreateFunction;
 import io.confluent.ksql.parser.tree.CreateStream;
 import io.confluent.ksql.parser.tree.CreateStreamAsSelect;
 import io.confluent.ksql.parser.tree.CreateTable;
@@ -42,6 +44,8 @@ public class CommandIdAssigner {
       ImmutableMap.<Class<? extends Statement>, CommandIdSupplier>builder()
           .put(RegisterTopic.class,
             command -> getTopicCommandId((RegisterTopic) command))
+          .put(CreateFunction.class,
+            command -> getCreateFunctionCommandId((CreateFunction) command))
           .put(CreateStream.class,
             command -> getTopicStreamCommandId((CreateStream) command))
           .put(CreateTable.class,
@@ -81,6 +85,14 @@ public class CommandIdAssigner {
   private static CommandId getTopicCommandId(final RegisterTopic registerTopic) {
     final String topicName = registerTopic.getName().toString();
     return new CommandId(CommandId.Type.TOPIC, topicName, CommandId.Action.CREATE);
+  }
+
+  private static CommandId getCreateFunctionCommandId(final CreateFunction createFunction) {
+    return new CommandId(
+        CommandId.Type.FUNCTION,
+        createFunction.getName().toString(),
+        CommandId.Action.CREATE
+    );
   }
 
   private static CommandId getTopicStreamCommandId(final CreateStream createStream) {
