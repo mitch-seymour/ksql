@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import io.confluent.ksql.function.udaf.Udaf;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -32,10 +33,23 @@ import java.util.stream.Stream;
  */
 public class SummaryStatsUdafTests {
 
+  @Test
+  void mergeAggregates() {
+    final Udaf<Double, Map<String, Double>> udaf = SummaryStatsUdaf.createUdaf();
+    final Map<String, Double> mergedAggregate = udaf.merge(
+      // (sample_size, sum, mean)
+      aggregate(3.0, 3300.0, 1100.0),
+      aggregate(7.0, 6700.0, 800.0)
+    );
+
+    final Map<String, Double> expectedResult = aggregate(10.0, 10000.0, 1000.0);
+    assertEquals(expectedResult, mergedAggregate);
+  }
+
   @ParameterizedTest
   @MethodSource("aggSources")
   void calculateSummaryStats(Double newValue, Map<String, Double> currentAggregate, Map<String, Double> expectedResult) {
-    final Udaf<Double, Map<String, Double>> udaf = SummaryStatsUdaf.createStddev();
+    final Udaf<Double, Map<String, Double>> udaf = SummaryStatsUdaf.createUdaf();
     assertEquals(expectedResult, udaf.aggregate(newValue, currentAggregate));
   }
 
@@ -46,47 +60,36 @@ public class SummaryStatsUdafTests {
         // new value
         400.0,
         // current aggregate
-        result(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+        aggregate(0.0, 0.0, 0.0),
         // expected new aggregate
-        result(400.0, 1.0, 400.0, 160000.0, 0.0, 0.0)
+        aggregate(1.0, 400.0, 400.0)
       ),
       // sample: 400, 900
       arguments(
         // new value
         900.0,
         // current aggregate
-        result(400.0, 1.0, 400.0, 160000.0, 0.0, 0.0),
+        aggregate(1.0, 400.0, 400.0),
         // expected new aggregate
-        result(650.0, 2.0, 1300.0, 970000.0, 250.0, 353.5533905932738)
-      ),
-      // sample: 400, 900, 800
-      arguments(
-        // new value
-        800.0,
-        // current aggregate
-        result(650.0, 2.0, 1300.0, 970000.0, 250.0, 353.5533905932738),
-        // expected new aggregate
-        result(700.0, 3.0, 2100.0, 1610000.0, 216.0246899469286, 264.57513110645897)
+        aggregate(2.0, 1300.0, 650.0)
       )
     );
   }
 
-  static Map<String, Double> result(
-    Double mean,
-    Double sampleSize,
-    Double sum,
-    Double sumSquares,
-    Double stddevPopulation,
-    Double stddevSample) {
+  /**
+   * Helper method for building an aggregate that mimics what KSQL would pass
+   * to ur UDAF instance.
+   */
+  static Map<String, Double> aggregate(
+      final Double sampleSize,
+      final Double sum,
+      final Double mean
+  ) {
 
     Map<String, Double> result = new HashMap<>();
     result.put("mean", mean);
     result.put("sample_size", sampleSize);
     result.put("sum", sum);
-    result.put("sum_squares", sumSquares);
-    result.put("stddev_population", stddevPopulation);
-    result.put("stddev_sample", stddevSample);
     return result;
   }
 }
-

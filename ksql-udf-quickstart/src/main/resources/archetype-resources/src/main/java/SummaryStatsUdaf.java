@@ -43,57 +43,48 @@ public class SummaryStatsUdaf {
   @UdafFactory(description = "compute summary stats for doubles")
   // Can be used with stream aggregations. The input of our aggregation will be doubles,
   // and the output will be a map
-  public static Udaf<Double, Map<String, Double>> createStddev() {
+  public static Udaf<Double, Map<String, Double>> createUdaf() {
 
     return new Udaf<Double, Map<String, Double>>() {
 
       // Specify an initial value for our aggregation
       @Override
       public Map<String, Double> initialize() {
-        Map<String, Double> stats = new HashMap<>();
+        final Map<String, Double> stats = new HashMap<>();
         stats.put("mean", 0.0);
         stats.put("sample_size", 0.0);
         stats.put("sum", 0.0);
-        stats.put("sum_squares", 0.0);
-        stats.put("stddev_population", 0.0);
-        stats.put("stddev_sample", 0.0);
         return stats;
       }
 
       // Perform the aggregation whenever a new record appears in our stream
       @Override
       public Map<String, Double> aggregate(final Double currentValue, final Map<String,Double> aggregateValue) {
-        Double sampleSize = aggregateValue.getOrDefault("sample_size", 0.0) + 1.0;
-        Double sum =  aggregateValue.getOrDefault("sum", 0.0) + currentValue;
-        Double sumSquares = aggregateValue.getOrDefault("sum_squares", 0.0) + (currentValue * currentValue);
-
-        // Calculate a rolling population standard deviation.
-        Double mean = sum / sampleSize;
-        Double variancePopulation = (sumSquares / sampleSize) - (mean * mean);
-
-        // Build the map of summary statistics
-        aggregateValue.put("mean", mean);
-        aggregateValue.put("sample_size", sampleSize);
-        aggregateValue.put("sum", sum);
-        aggregateValue.put("sum_squares", sumSquares);
-        aggregateValue.put("stddev_population", Math.sqrt(variancePopulation));
-
-        if (sampleSize > 1) {
-          // Get the unbiased variance to calculate a rolling sample standard deviation
-          Double inverse = sampleSize / (sampleSize - 1);
-          Double varianceSample = inverse * variancePopulation;
-          aggregateValue.put("stddev_sample", Math.sqrt(varianceSample));
-        } else {
-          aggregateValue.put("stddev_sample", 0.0);
-        }
-
-        return aggregateValue;
+        final Double sampleSize = aggregateValue.getOrDefault("sample_size", 0.0) + 1.0;
+        final Double sum =  aggregateValue.getOrDefault("sum", 0.0) + currentValue;
+        // calculate the new aggregate
+        Map<String, Double> newAggregate = new HashMap<>();
+        newAggregate.put("mean", sum / sampleSize);
+        newAggregate.put("sample_size", sampleSize);
+        newAggregate.put("sum", sum);
+        return newAggregate;
       }
 
-      // Specify what should happen when aggregations are merged
+      // Specify what should happen when aggregations are merged. This method
+      // should produce a combined aggregate
       @Override
       public Map<String,Double> merge(final Map<String, Double> aggOne, final Map<String, Double> aggTwo) {
-        return aggTwo;
+        final Double sampleSize =
+            aggOne.getOrDefault("sample_size", 0.0) + aggTwo.getOrDefault("sample_size", 0.0);
+        final Double sum =
+            aggOne.getOrDefault("sum", 0.0) + aggTwo.getOrDefault("sum", 0.0);
+
+        // calculate the new aggregate
+        Map<String, Double> newAggregate = new HashMap<>();
+        newAggregate.put("mean", sum / sampleSize);
+        newAggregate.put("sample_size", sampleSize);
+        newAggregate.put("sum", sum);
+        return newAggregate;
       }
     };
   }
